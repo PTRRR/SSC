@@ -1,0 +1,1 @@
+"# SSP"  initgit add README.mdgit commit -m "first commit"git remote add origin git@github.com:PTRRR/SSP.gitgit push -u origin master
