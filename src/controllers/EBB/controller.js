@@ -7,7 +7,7 @@
 
 import BaseController from '../BaseController'
 import * as helper from './helper'
-import { printPoint } from '../../utils'
+import { printPoint, clamp } from '../../utils'
 
 // Default values
 let _minStepsPerMillisecond = 0.07
@@ -263,6 +263,10 @@ export default class EBBController extends BaseController {
 
   async moveTo(targetPositionX, targetPositionY) {
     const [x, y] = _position
+
+    // Constrict movement to the available area
+    targetPositionX = clamp(targetPositionX, 0, this.maxStepsX)
+    targetPositionY = clamp(targetPositionY, 0, this.maxStepsY)
 
     // Compute steps
     // See EBB Command Set Documentation for more informations
