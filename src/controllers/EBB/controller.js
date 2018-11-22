@@ -25,6 +25,7 @@ let _maxStepsY = 0
 let _minServoHeight = 23000
 let _maxServoHeight = 18000
 let _servoRate = 30000
+let _minDeltaPositionForDistinctLines = 70
 
 let _elapsedTime = 0
 let _totalStepsX = 0
@@ -65,8 +66,8 @@ export default class EBBController extends BaseController {
       // Check first if the point to draw is different from the last one.
       // Otherwise just skip it.
       if (
-        Math.abs(_position[0] - X) > 70 ||
-        Math.abs(_position[1] - Y) > 70
+        Math.abs(_position[0] - X) > _minDeltaPositionForDistinctLines ||
+        Math.abs(_position[1] - Y) > _minDeltaPositionForDistinctLines
       ) {
         // Check if the last draw state is the same of the current one
         // and if so skip this.
@@ -192,6 +193,14 @@ export default class EBBController extends BaseController {
 
   get maxStepsY () {
     return _maxStepsY
+  }
+
+  set minDeltaPositionForDistinctLines(minDeltaPositionForDistinctLines) {
+    _minDeltaPositionForDistinctLines = minDeltaPositionForDistinctLines
+  }
+
+  get minDeltaPositionForDistinctLines () {
+    return _minDeltaPositionForDistinctLines
   }
 
   set minServoHeight(minServoHeight) {
