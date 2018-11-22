@@ -100,8 +100,6 @@ export default class EBBController extends BaseController {
   }
 
   async stop() {
-    await super.stop()
-
     // Reset state
     this.speed = _movingSpeed
     await this.raiseBrush()
@@ -118,6 +116,8 @@ export default class EBBController extends BaseController {
     printPoint(`COMPLETED IN: ${_elapsedTime / 1000}s`)
     printPoint(`TOTAL STEPS X: ${_totalStepsX}`)
     printPoint(`TOTAL STEPS Y: ${_totalStepsY}`)
+    
+    await super.stop()
   }
 
   // Getters & Setters
