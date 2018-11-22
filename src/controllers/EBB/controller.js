@@ -14,14 +14,14 @@ let _minStepsPerMillisecond = 0.07
 let _maxStepsPerMillisecond = 15
 let _stepPosition = [0, 0]
 
-let _lastDraw = false
-
 let _position = [0, 0]
-let _lastPosition = [0, 0]
+let _penState = 0
 
 let _speed = 0
 let _drawingSpeed = 30
 let _movingSpeed = 80
+let _maxStepsX = 0
+let _maxStepsY = 0
 let _minServoHeight = 23000
 let _maxServoHeight = 18000
 let _servoRate = 30000
@@ -39,7 +39,14 @@ export default class EBBController extends BaseController {
     await this.setServoMinHeight(_minServoHeight)
     await this.setServoMaxHeight(_maxServoHeight)
     await this.setServoRate(_servoRate)
+
+    // Test
     await this.lowerBrush()
+    this.speed = _movingSpeed
+    await this.moveTo(0, this.maxStepsY)
+    await this.moveTo(this.maxStepsX, this.maxStepsY)
+    await this.moveTo(this.maxStepsX, 0)
+    await this.moveTo(0, 0)
     await this.raiseBrush()
   }
 
@@ -52,17 +59,17 @@ export default class EBBController extends BaseController {
     // We considere G0 commands
     if (cmd === 'G0') {
       const { X, Y, Z } = params
-      const draw = !Z
+      const draw = Z
 
       // Check first if the point to draw is different from the last one.
       // Otherwise just skip it.
       if (
-        Math.abs(_lastPosition[0] - X) > 70 ||
-        Math.abs(_lastPosition[1] - Y) > 70
+        Math.abs(_position[0] - X) > 70 ||
+        Math.abs(_position[1] - Y) > 70
       ) {
         // Check if the last draw state is the same of the current one
         // and if so skip this.
-        if (_lastDraw !== draw) {
+        if (_penState !== draw) {
           if (draw) {
             await this.lowerBrush()
           } else {
@@ -79,11 +86,7 @@ export default class EBBController extends BaseController {
 
         // Move
         await this.moveTo(X, Y)
-        _lastDraw = draw
       }
-
-      // Keep track of the last position
-      _lastPosition = [X, Y]
     }
   }
 
@@ -103,7 +106,6 @@ export default class EBBController extends BaseController {
     this.speed = _movingSpeed
     await this.raiseBrush()
     await this.resetStepperPosition()
-    _lastPosition = [0, 0]
 
     // Disable stepper motors
     await this.disableStepperMotors()
@@ -175,6 +177,22 @@ export default class EBBController extends BaseController {
     return _position
   }
 
+  set maxStepsX (maxStepsX) {
+    _maxStepsX = maxStepsX
+  }
+
+  get maxStepsX () {
+    return _maxStepsX
+  }
+
+  set maxStepsY (maxStepsY) {
+    _maxStepsY = maxStepsY
+  }
+
+  get maxStepsY () {
+    return _maxStepsY
+  }
+
   set minServoHeight(minServoHeight) {
     _minServoHeight = minServoHeight
   }
@@ -225,10 +243,12 @@ export default class EBBController extends BaseController {
   }
 
   async lowerBrush() {
+    _penState = 1
     await helper.setPenState(this._port, 0)
   }
 
   async raiseBrush() {
+    _penState = 0
     await helper.setPenState(this._port, 1)
   }
 

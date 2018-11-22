@@ -1,6 +1,15 @@
-export const controllerConfig = {
+const maxSize = {
   maxStepsX: 32500,
-  maxStepsY: 22000,
+  maxStepsY: 22000
+}
+
+const A5 = {
+  maxStepsX: 14800,
+  maxStepsY: 10300
+}
+
+export const controllerConfig = {
+  ...A5,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
