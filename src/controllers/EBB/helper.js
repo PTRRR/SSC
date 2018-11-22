@@ -28,7 +28,7 @@
 
 export async function reset (port) {
   return new Promise(resolve => {
-    port.write(`R\r`)
+    port.write('R\r')
     setTimeout(() => {
       resolve()
     }, 1000)
@@ -228,9 +228,12 @@ export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
   return new Promise(resolve => {
     port.write(`SM,${duration},${axisSteps1},${axisSteps2}\r`)
 
+    // This is a bit a hack...
+    // Wait a bit less than the actual duration to be sure to put the next
+    // command in the motion queue of the EBB so that the movements are smoother.
     setTimeout(() => {
       resolve()
-    }, duration)
+    }, duration - 1)
   })
 }
 
@@ -267,3 +270,20 @@ export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
 //     }, duration)
 //   })
 // }
+
+/**
+ * "QM" — Query Motor
+ * Command: QM<CR>
+ *  Use this command to see what the EBB is currently doing. It will return the current state of the 'motion system' and each motor's current state.
+ *
+ *  CommandStatus is nonzero if any "motion commands" are presently executing, and zero otherwise.
+ *  Motor1Status is 1 if motor 1 is currently moving, and 0 if it is idle.
+ *  Motor2Status is 1 if motor 2 is currently moving, and 0 if it is idle.
+ */
+
+export async function queryMotor (port) {
+  return new Promise(resolve => { 
+    port.write('QM\r')
+    resolve()
+  })
+}

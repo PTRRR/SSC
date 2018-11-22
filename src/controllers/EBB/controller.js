@@ -32,6 +32,11 @@ let _totalStepsY = 0
 
 export default class EBBController extends BaseController {
   async configure(config = {}) {
+    this._port.on('data', buffer => {
+      // TODO: Handle data
+      const data = buffer.toString('utf-8').split(',')
+    })
+
     await super.configure(config)
 
     // Setup controller with configured values
@@ -42,12 +47,8 @@ export default class EBBController extends BaseController {
 
     // Test
     await this.lowerBrush()
-    this.speed = _movingSpeed
-    await this.moveTo(0, this.maxStepsY)
-    await this.moveTo(this.maxStepsX, this.maxStepsY)
-    await this.moveTo(this.maxStepsX, 0)
-    await this.moveTo(0, 0)
     await this.raiseBrush()
+    await this.disableStepperMotors()
   }
 
   async executeGCODE(gcode) {

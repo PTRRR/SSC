@@ -15,22 +15,22 @@ export async function createServer(config, controller) {
       const { action, data } = JSON.parse(message)
 
       switch (action) {
-        case 'get-config':
-          ws.send(JSON.stringify({ action: action, data: controller.config }))
-          break
-        default:
-          // Run the action
-          if (controller[action]) {
-            controller[action](data)
-          } else {
-            ws.send(
-              `SERVER ERROR: The action:${action} is not defined on the current controller`
-            )
-            printError(
-              `SERVER ERROR: The action:${action} is not defined on the current controller`
-            )
-          }
-          break
+      case 'get-config':
+        ws.send(JSON.stringify({ action: action, data: controller.config }))
+        break
+      default:
+        // Run the action
+        if (controller[action]) {
+          controller[action](data)
+        } else {
+          ws.send(
+            `SERVER ERROR: The action:${action} is not defined on the current controller`
+          )
+          printError(
+            `SERVER ERROR: The action:${action} is not defined on the current controller`
+          )
+        }
+        break
       }
     })
 
