@@ -1,5 +1,9 @@
 function stringify (elem) {
-  return JSON.stringify(elem).replace(/"/g, '')
+  if (elem || elem === '') {
+    return JSON.stringify(elem).replace(/"/g, '')
+  } else {
+    return 'undefined'
+  }
 }
 
 export function printTitle (title) {
@@ -37,7 +41,7 @@ function writePoint (point) {
 export function printError (error) {
   drawSkull()
   console.log('\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n')
-  console.log(` ERROR: ${stringify(error).toUpperCase()}`)
+  console.log(` ERROR:\n ${stringify(error).toUpperCase()}`)
   console.log('\nxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\n')
 }
 

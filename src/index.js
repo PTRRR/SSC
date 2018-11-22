@@ -1,20 +1,31 @@
+import getos from 'getos'
 import config from './config'
 import { getSerialPort } from './serialport'
 import { createServer } from './server'
-import { printError } from './utils'
+import { printMessage, printError } from './utils'
 import * as controllers from './controllers'
 
-// Retrieve global config
-const { server, controller } = config
-const { name } = controller
+async function app (osInfos) {
+  const { os } = osInfos
 
-// Retrieve controller components
-const { Controller } = controllers[name]
-const { serialConfig, controllerConfig } = controllers[name].config
+  // Retrieve global config
+  const { server, controller } = config
+  const { name } = controller
 
-async function app () {
+  // Retrieve controller components
+  const { Controller } = controllers[name]
+  const { serialConfig, controllerConfig } = controllers[name].config[os]
+
   // Get to serial port neede to controll the selected controller
-  const serialPort = await getSerialPort(serialConfig)
+  let serialPort = null
+  try {
+    serialPort = await getSerialPort(serialConfig)
+  } catch (e) {
+    printError(e)
+    if (e.includes('Permission denied')) {
+      printMessage('Try to run this command as root -> with `sudo`')
+    }
+  }
 
   if (serialPort) {
     // Create a controller that will use the serial port to communicate with
@@ -25,8 +36,11 @@ async function app () {
     // Create the websocket server
     createServer(server, controller)
   } else {
-    printError("The controller coudn't be loaded")
+    printError('CLOSING SERVER')
   }
 }
 
-app()
+// Initialize the app with the right os config
+getos((e, osInfos) => {
+  app(osInfos)
+})
