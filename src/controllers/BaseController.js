@@ -6,28 +6,15 @@
  * Each controller class inherit from this one.
  */
 
-import Interpreter from 'gcode-interpreter'
 import { printTitle, printPoint } from '../utils'
+const gcodeToObject = require('gcode-json-converter').gcodeToObject
 
-export default class BaseController extends Interpreter {
+export default class BaseController {
   constructor(port) {
-    super()
     this._port = port
     this._config = null
     this._queue = []
     this._isRunning = false
-
-    // Setup the GCODE handler
-    this.defaultHandler = (cmd, params) => {
-      this._queue.push({
-        cmd,
-        params
-      })
-
-      if (!this._isRunning) {
-        this.start()
-      }
-    }
   }
 
   get config() {
@@ -50,7 +37,20 @@ export default class BaseController extends Interpreter {
   }
 
   async feedGCODE(rawGcode = '') {
-    this.loadFromString(rawGcode)
+    const gcodes = rawGcode.split('\n')
+
+    for (const gcode of gcodes) {
+      const parsedGcode = gcodeToObject(gcode)
+      const { command, args } = parsedGcode
+      this._queue.push({
+        command,
+        args
+      })
+    }
+
+    if (!this._isRunning) {
+      this.start()
+    }
   }
 
   async start() {
@@ -62,7 +62,7 @@ export default class BaseController extends Interpreter {
     let index = 0
     while (index < this._queue.length && this._isRunning) {
       const gcode = this._queue[index]
-      printPoint(gcode)
+      // printPoint(gcode)
       await this.executeGCODE(gcode)
       index++
     }

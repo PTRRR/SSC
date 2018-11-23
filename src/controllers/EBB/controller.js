@@ -47,8 +47,8 @@ export default class EBBController extends BaseController {
     await this.setServoRate(_servoRate)
 
     // Test
-    await this.lowerBrush()
-    await this.raiseBrush()
+    // await this.lowerBrush()
+    // await this.raiseBrush()
     await this.disableStepperMotors()
   }
 
@@ -56,18 +56,18 @@ export default class EBBController extends BaseController {
     if (!this._isRunning) return
 
     // Parsed values from a GCODE command
-    const { cmd, params } = gcode
+    const { command, args } = gcode
 
     // We considere G0 commands
-    if (cmd === 'G0') {
-      const { X, Y, Z } = params
-      const draw = Z
+    if (command === 'G0') {
+      const { x, y, z } = args
+      const draw = z
 
       // Check first if the point to draw is different from the last one.
       // Otherwise just skip it.
       if (
-        Math.abs(_position[0] - X) > _minDeltaPositionForDistinctLines ||
-        Math.abs(_position[1] - Y) > _minDeltaPositionForDistinctLines
+        Math.abs(_position[0] - x) > _minDeltaPositionForDistinctLines ||
+        Math.abs(_position[1] - y) > _minDeltaPositionForDistinctLines
       ) {
         // Check if the last draw state is the same of the current one
         // and if so skip this.
@@ -87,7 +87,7 @@ export default class EBBController extends BaseController {
         }
 
         // Move
-        await this.moveTo(X, Y)
+        await this.moveTo(x, y)
       }
     }
   }
@@ -99,9 +99,7 @@ export default class EBBController extends BaseController {
 
     // Start sequence
     await super.start()
-  }
 
-  async stop() {
     // Reset state
     this.speed = _movingSpeed
     await this.raiseBrush()
@@ -110,16 +108,12 @@ export default class EBBController extends BaseController {
     // Disable stepper motors
     await this.disableStepperMotors()
 
-    // Compute elapsed time
-    const date = new Date()
     _elapsedTime = date.getTime() - _elapsedTime
 
     // Print stats
     printPoint(`COMPLETED IN: ${_elapsedTime / 1000}s`)
     printPoint(`TOTAL STEPS X: ${_totalStepsX}`)
     printPoint(`TOTAL STEPS Y: ${_totalStepsY}`)
-    
-    await super.stop()
   }
 
   // Getters & Setters
