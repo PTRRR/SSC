@@ -47,9 +47,9 @@ export default class EBBController extends BaseController {
     await this.setServoRate(_servoRate)
 
     // Test
-    // await this.lowerBrush()
-    // await this.raiseBrush()
+    await this.raiseBrush()
     await this.disableStepperMotors()
+    await helper.wait(1000)
   }
 
   async executeGCODE(gcode) {
@@ -58,37 +58,34 @@ export default class EBBController extends BaseController {
     // Parsed values from a GCODE command
     const { command, args } = gcode
 
-    // We considere G0 commands
-    if (command === 'G0') {
-      const { x, y, z } = args
-      const draw = z
+    // Map GCODE commands to the controller API
+    switch (command) {
+    // Fast movement
+    case 'G0': {
+      const { x, y } = args
+      this.speed = _movingSpeed
+      await this.moveTo(x, y)
+      break
+    }
 
-      // Check first if the point to draw is different from the last one.
-      // Otherwise just skip it.
-      if (
-        Math.abs(_position[0] - x) > _minDeltaPositionForDistinctLines ||
-        Math.abs(_position[1] - y) > _minDeltaPositionForDistinctLines
-      ) {
-        // Check if the last draw state is the same of the current one
-        // and if so skip this.
-        if (_penState !== draw) {
-          if (draw) {
-            await this.lowerBrush()
-          } else {
-            await this.raiseBrush()
-          }
-        }
+    // Linear movement
+    case 'G1': {
+      const { x, y } = args
+      this.speed = _drawingSpeed
+      await this.moveTo(x, y)
+      break
+    }
 
-        // Adapt speed when drawing or moving
-        if (draw) {
-          this.speed = _drawingSpeed
-        } else {
-          this.speed = _movingSpeed
-        }
+    // Retract
+    case 'G10': {
+      await this.raiseBrush()
+      break
+    }
 
-        // Move
-        await this.moveTo(x, y)
-      }
+    // Unretract
+    case 'G11': {
+      await this.lowerBrush()
+    }
     }
   }
 

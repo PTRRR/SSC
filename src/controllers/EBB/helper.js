@@ -12,9 +12,24 @@
    * functions defined above.
    */
 
+const MIN_FIFO_INTERVAL = 1.5 // ms
+
+/**
+ * Utils
+ */
+
+export async function wait (duration) {
+  return new Promise(resolve => {
+    setTimeout(() => {
+      resolve()
+    }, duration)
+  })
+}
+
 /**
    * "R" — Reset
-   *
+   * Execution: Immediate
+   * 
    * This command reinitializes the the internal state of the EBB to the default
    * power on state. This includes setting all I/O pins in their power on states,
    * stopping any ongoing timers or servo outputs, etc. It does NOT do a complete
@@ -29,15 +44,14 @@
 export async function reset (port) {
   return new Promise(resolve => {
     port.write('R\r')
-    setTimeout(() => {
-      resolve()
-    }, 1000)
+    resolve()
   })
 }
 
 /**
  * "SC" — Stepper and Servo Mode Configure
  * Command: SC,value1,value2<CR>
+ * Execution: Immediate
  *
  * This command allows you to configure the motor control modes that the EBB
  * uses, including parameters of the servo or solenoid motor used for raising
@@ -99,13 +113,13 @@ export async function stepperAndServoModeConfigure (
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SP
  */
 
-export async function setPenState (port, state) {
+export async function setPenState (port, state, duration = 150) {
   return new Promise(resolve => {
-    port.write(`SP,${state}\r`)
+    port.write(`SP,${state}, ${duration}\r`)
 
     setTimeout(() => {
       resolve()
-    }, 200)
+    }, duration - MIN_FIFO_INTERVAL)
   })
 }
 
@@ -113,6 +127,7 @@ export async function setPenState (port, state) {
 /**
  * "EM" — Enable Motors
  * Command: EM,Enable1[,Enable2]<CR>
+ * Execution: Immediate
  *
  * Enable or disable stepper motors and set step mode.
  * Each stepper motor may be independently enabled (energized) or disabled
@@ -233,7 +248,7 @@ export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
     // command in the motion queue of the EBB so that the movements are smoother.
     setTimeout(() => {
       resolve()
-    }, duration - 1)
+    }, duration - MIN_FIFO_INTERVAL)
   })
 }
 

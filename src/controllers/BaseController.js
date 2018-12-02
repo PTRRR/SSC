@@ -62,7 +62,7 @@ export default class BaseController {
     let index = 0
     while (index < this._queue.length && this._isRunning) {
       const gcode = this._queue[index]
-      // printPoint(gcode)
+      printPoint(gcode)
       await this.executeGCODE(gcode)
       index++
     }
