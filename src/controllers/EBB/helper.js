@@ -1,18 +1,31 @@
 /**
-   *
-   * EBB (EIBOTBOARD) COMMAND SET
-   * LOWER-LEVEL FUNCTIONS
-   *
-   * These methods provide a way of sending serial commands to the EBB according
-   * to the EiBotBoard Command Set document (http://evil-mad.github.io/EggBot/ebb.html).
-   * The following methods are returning a promise when the command have finished
-   * executing.
-   *
-   * These commands shouldn't be used directly but only in the higher-level
-   * functions defined above.
-   */
+  *
+  * EBB (EIBOTBOARD) COMMAND SET
+  * LOWER-LEVEL FUNCTIONS
+  *
+  * These methods provide a way of sending serial commands to the EBB according
+  * to the EiBotBoard Command Set document (http://evil-mad.github.io/EggBot/ebb.html).
+  * The following methods are returning a promise when the command have finished
+  * executing.
+  *
+  * These commands shouldn't be used directly but only in the higher-level
+  * functions defined above.
+  */
 
-const MIN_FIFO_INTERVAL = 1.5 // ms
+const MIN_FIFO_INTERVAL = 3 // ms
+let offsetAccumulator = 0
+let syncThreshold = 50
+
+function getTimeout (duration) {
+  offsetAccumulator += MIN_FIFO_INTERVAL
+  if (offsetAccumulator < syncThreshold) {
+    return duration - MIN_FIFO_INTERVAL
+  } else {
+    const syncOffset = offsetAccumulator
+    offsetAccumulator = 0
+    return duration + syncOffset * 0.5
+  }
+}
 
 /**
  * Utils
@@ -119,7 +132,7 @@ export async function setPenState (port, state, duration = 150) {
 
     setTimeout(() => {
       resolve()
-    }, duration - MIN_FIFO_INTERVAL)
+    }, getTimeout(duration))
   })
 }
 
@@ -242,13 +255,9 @@ export async function enableMotors (port, { enable1, enable2 }) {
 export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
   return new Promise(resolve => {
     port.write(`SM,${duration},${axisSteps1},${axisSteps2}\r`)
-
-    // This is a bit a hack...
-    // Wait a bit less than the actual duration to be sure to put the next
-    // command in the motion queue of the EBB so that the movements are smoother.
     setTimeout(() => {
       resolve()
-    }, duration - MIN_FIFO_INTERVAL)
+    }, getTimeout(duration))
   })
 }
 

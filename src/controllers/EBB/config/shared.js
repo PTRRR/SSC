@@ -8,14 +8,19 @@ const A5 = {
   maxStepsY: 10300
 }
 
+const testFormat = {
+  maxStepsX: 20000,
+  maxStepsY: 10000
+}
+
 export const controllerConfig = {
-  ...A5,
+  ...testFormat,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
   minServoHeight: 20000,
   maxServoHeight: 16000,
-  drawingSpeed: 80,
-  movingSpeed: 80,
+  drawingSpeed: 20,
+  movingSpeed: 50,
   minDeltaPositionForDistinctLines: 2
 }
