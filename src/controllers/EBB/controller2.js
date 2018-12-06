@@ -6,7 +6,7 @@
  */
 
 import BaseController from '../BaseController'
-import * as helper from './helper'
+import * as helper from './helpers'
 import { printPoint, clamp } from '../../utils'
 
 // Default values

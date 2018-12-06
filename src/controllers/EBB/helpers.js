@@ -1,22 +1,22 @@
 /**
-  *
-  * EBB (EIBOTBOARD) COMMAND SET
-  * LOWER-LEVEL FUNCTIONS
-  *
-  * These methods provide a way of sending serial commands to the EBB according
-  * to the EiBotBoard Command Set document (http://evil-mad.github.io/EggBot/ebb.html).
-  * The following methods are returning a promise when the command have finished
-  * executing.
-  *
-  * These commands shouldn't be used directly but only in the higher-level
-  * functions defined above.
-  */
+ *
+ * EBB (EIBOTBOARD) COMMAND SET
+ * LOWER-LEVEL FUNCTIONS
+ *
+ * These methods provide a way of sending serial commands to the EBB according
+ * to the EiBotBoard Command Set document (http://evil-mad.github.io/EggBot/ebb.html).
+ * The following methods are returning a promise when the command have finished
+ * executing.
+ *
+ * These commands shouldn't be used directly but only in the higher-level
+ * functions defined above.
+ */
 
 const MIN_FIFO_INTERVAL = 3 // ms
 let offsetAccumulator = 0
 let syncThreshold = 50
 
-function getTimeout (duration) {
+function getTimeout(duration) {
   offsetAccumulator += MIN_FIFO_INTERVAL
   if (offsetAccumulator < syncThreshold) {
     return duration - MIN_FIFO_INTERVAL
@@ -31,7 +31,7 @@ function getTimeout (duration) {
  * Utils
  */
 
-export async function wait (duration) {
+export async function wait(duration) {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve()
@@ -40,25 +40,22 @@ export async function wait (duration) {
 }
 
 /**
-   * "R" — Reset
-   * Execution: Immediate
-   * 
-   * This command reinitializes the the internal state of the EBB to the default
-   * power on state. This includes setting all I/O pins in their power on states,
-   * stopping any ongoing timers or servo outputs, etc. It does NOT do a complete
-   * reset of the EBB - this command does not cause the EBB to drop off the USB
-   * and come back, it does not reinitialize the processor's internal register,
-   * etc. It is simply a high level EBB-application reset. If you want to completely
-   * reset the board, use the RB command.
-   *
-   * Example: R<CR>
-  */
+ * "R" — Reset
+ * Execution: Immediate
+ *
+ * This command reinitializes the the internal state of the EBB to the default
+ * power on state. This includes setting all I/O pins in their power on states,
+ * stopping any ongoing timers or servo outputs, etc. It does NOT do a complete
+ * reset of the EBB - this command does not cause the EBB to drop off the USB
+ * and come back, it does not reinitialize the processor's internal register,
+ * etc. It is simply a high level EBB-application reset. If you want to completely
+ * reset the board, use the RB command.
+ *
+ * Example: R<CR>
+ */
 
-export async function reset (port) {
-  return new Promise(resolve => {
-    port.write('R\r')
-    resolve()
-  })
+export function reset(port) {
+  port.write('R\r')
 }
 
 /**
@@ -89,14 +86,8 @@ export async function reset (port) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SC
  */
 
-export async function stepperAndServoModeConfigure (
-  port,
-  { parameter, integer }
-) {
-  return new Promise(resolve => {
-    port.write(`SC,${parameter},${integer}\r`)
-    resolve()
-  })
+export function stepperAndServoModeConfigure(port, { parameter, integer }) {
+  port.write(`SC,${parameter},${integer}\r`)
 }
 
 /**
@@ -126,14 +117,8 @@ export async function stepperAndServoModeConfigure (
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SP
  */
 
-export async function setPenState (port, state, duration = 150) {
-  return new Promise(resolve => {
-    port.write(`SP,${state}, ${duration}\r`)
-
-    setTimeout(() => {
-      resolve()
-    }, getTimeout(duration))
-  })
+export function setPenState(port, state, duration = 150) {
+  port.write(`SP,${state},${duration}\r`)
 }
 
 // Motors
@@ -177,13 +162,10 @@ export async function setPenState (port, state, duration = 150) {
  * change motor 2's enable status. (Enable2 is optional)
  *
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#EM
-*/
+ */
 
-export async function enableMotors (port, { enable1, enable2 }) {
-  return new Promise(resolve => {
-    port.write(`EM,${enable1},${enable2}\r`)
-    resolve()
-  })
+export function enableMotors(port, { enable1, enable2 }) {
+  port.write(`EM,${enable1},${enable2}\r`)
 }
 
 /**
@@ -252,7 +234,7 @@ export async function enableMotors (port, { enable1, enable2 }) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SM
  */
 
-export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
+export async function stepperMove(port, { duration, axisSteps1, axisSteps2 }) {
   return new Promise(resolve => {
     port.write(`SM,${duration},${axisSteps1},${axisSteps2}\r`)
     setTimeout(() => {
@@ -305,9 +287,6 @@ export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
  *  Motor2Status is 1 if motor 2 is currently moving, and 0 if it is idle.
  */
 
-export async function queryMotor (port) {
-  return new Promise(resolve => { 
-    port.write('QM\r')
-    resolve()
-  })
+export function queryMotor(port) {
+  port.write('QM\r')
 }
