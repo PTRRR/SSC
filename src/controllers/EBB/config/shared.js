@@ -1,11 +1,28 @@
+const MILLIMETER_IN_STEPS = 80
+
 const maxSize = {
   maxStepsX: 32500,
   maxStepsY: 22000
 }
 
-const A5 = {
-  maxStepsX: 14800,
-  maxStepsY: 10300
+const A5_HORIZONTAL = {
+  maxStepsX: 210 * MILLIMETER_IN_STEPS,
+  maxStepsY: 148 * MILLIMETER_IN_STEPS
+}
+
+const A5_VERTICAL = {
+  maxStepsX: 149 * MILLIMETER_IN_STEPS,
+  maxStepsY: 210 * MILLIMETER_IN_STEPS
+}
+
+const A4_VERTICAL = {
+  maxStepsX: 210 * MILLIMETER_IN_STEPS,
+  maxStepsY: 297 * MILLIMETER_IN_STEPS
+}
+
+const A4_HORIZONTAL = {
+  maxStepsX: 297 * MILLIMETER_IN_STEPS,
+  maxStepsY: 210 * MILLIMETER_IN_STEPS
 }
 
 const testFormat = {
@@ -14,7 +31,7 @@ const testFormat = {
 }
 
 export const controllerConfig = {
-  ...testFormat,
+  ...A5_HORIZONTAL,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
