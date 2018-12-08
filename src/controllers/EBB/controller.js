@@ -1,5 +1,6 @@
 import * as helpers from './helpers'
 import { printPoint, clamp } from '../../utils'
+import { number } from './alphabet'
 const gcodeToObject = require('gcode-json-converter').gcodeToObject
 
 export default class EBBController {
@@ -41,6 +42,12 @@ export default class EBBController {
     await this.waitOnCommand(this.lowerBrush())
     await this.waitOnCommand(this.raiseBrush())
     this.disableStepperMotors()
+
+    this.feed(number(0, 100, 5000, 5000).join('\n'))
+    this.feed(number(1, 100, 5000 + 100 * 3, 5000).join('\n'))
+    this.feed(number(1, 100, 5000 + 100 * 6, 5000).join('\n'))
+    this.feed(number(2, 100, 5000 + 100 * 9, 5000).join('\n'))
+    this.feed(number(3, 100, 5000 + 100 * 12, 5000).join('\n'))
   }
 
   getConfig () {
