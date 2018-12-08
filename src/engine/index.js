@@ -1,4 +1,5 @@
-import { SerialConnection } from '../serialConnection'
+import { SerialConnection } from './serialConnection'
+import { WebSocketServer } from './server'
 import * as controllers from '../controllers'
 
 export class SSCEngine {
@@ -17,7 +18,8 @@ export class SSCEngine {
     }
 
     // Create a serial connection instance
-    this.serialConnection = new SerialConnection()
+    const { serialConfig } = this.controllerConfig
+    this.serialConnection = new SerialConnection(serialConfig)
 
     // Declare a controller variable that will handle communitation
     // to the hardware
@@ -26,21 +28,36 @@ export class SSCEngine {
 
   async start() {
     return new Promise(async (resolve, reject) => {
-      // Open serial connection according to the config file of the controller
-      const { controllerConfig, serialConfig } = this.controllerConfig
-      this.serialConnection
-        .openPort(serialConfig)
-        .then(serialPort => {
-          // TODO: Improve feedback messages
-          console.log('SERIAL CONNECTION: established')
+      await this.serialConnection.initializeConnection()
 
-          // Create new controller with the opened port
-          this.controller.initializeController(serialPort, controllerConfig)
-          resolve()
+      // Handle opening
+      this.serialConnection.on('open', async () => {
+        console.log('SERIAL CONNECTION: established')
+
+        // Initialize the controller
+        const { controllerConfig } = this.controllerConfig
+        await this.controller.initializeController(
+          this.serialConnection,
+          controllerConfig
+        )
+        console.log('CONTROLLER INITIALIZED')
+
+        // Initialize the webSocket server
+        const websocketServer = new WebSocketServer(this.serverConfig)
+        await websocketServer.initializeServer()
+        websocketServer.onConnection(send => {
+          send('SSC: Successfully connected!')
         })
-        .catch(e => {
-          reject(e)
-        })
+        console.log('SERVER INITIALIZED')
+
+        resolve()
+      })
+
+      // Handle errors
+      this.serialConnection.on('error', e => {
+        console.error(e)
+        reject(e)
+      })
     })
   }
 }

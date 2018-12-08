@@ -1,3 +1,9 @@
+// Some constants
+const MILIMETER_PER_STEP = 0.0125
+export const constants = {
+  MILIMETER_PER_STEP
+}
+
 /**
  *
  * EBB (EIBOTBOARD) COMMAND SET
@@ -12,30 +18,51 @@
  * functions defined above.
  */
 
-const MIN_FIFO_INTERVAL = 3 // ms
-let offsetAccumulator = 0
-let syncThreshold = 50
-
-function getTimeout(duration) {
-  offsetAccumulator += MIN_FIFO_INTERVAL
-  if (offsetAccumulator < syncThreshold) {
-    return duration - MIN_FIFO_INTERVAL
-  } else {
-    const syncOffset = offsetAccumulator
-    offsetAccumulator = 0
-    return duration + syncOffset * 0.5
-  }
-}
-
 /**
  * Utils
  */
+
+export function getAmountSteps(x, y, targetX, targetY) {
+  // Compute steps
+  // See EBB Command Set Documentation for more informations
+  const lastStepsX = x + y
+  const lastStepsY = x - y
+  const targetStepsX = targetX + targetY
+  const targetStepsY = targetX - targetY
+  const amountX = Math.round(targetStepsX - lastStepsX)
+  const amountY = Math.round(targetStepsY - lastStepsY)
+  return { amountX, amountY }
+}
+
+export function getDuration(
+  speed,
+  minStepsPerMillisecond,
+  maxStepsPerMillisecond,
+  amountX,
+  amountY
+) {
+  const speedPercent = speed / 100
+  const stepsPerMillisecond =
+    minStepsPerMillisecond +
+    (maxStepsPerMillisecond - minStepsPerMillisecond) * speedPercent
+  const steps = Math.abs(amountX) > Math.abs(amountY) ? amountX : amountY
+  const duration = Math.round(Math.abs(steps / stepsPerMillisecond))
+  return duration
+}
 
 export async function wait(duration) {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve()
     }, duration)
+  })
+}
+
+export async function reboot(port) {
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write('RB\r')
+    resolve({ type: 'RB' })
   })
 }
 
@@ -54,8 +81,12 @@ export async function wait(duration) {
  * Example: R<CR>
  */
 
-export function reset(port) {
-  port.write('R\r')
+export async function reset(port) {
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write('R\r')
+    resolve({ type: 'R' })
+  })
 }
 
 /**
@@ -86,8 +117,13 @@ export function reset(port) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SC
  */
 
-export function stepperAndServoModeConfigure(port, { parameter, integer }) {
-  port.write(`SC,${parameter},${integer}\r`)
+export async function stepperAndServoModeConfigure(port, args) {
+  const { parameter, integer } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`SC,${parameter},${integer}\r`)
+    resolve({ type: 'SC', ...args })
+  })
 }
 
 /**
@@ -117,8 +153,13 @@ export function stepperAndServoModeConfigure(port, { parameter, integer }) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SP
  */
 
-export function setPenState(port, state, duration = 150) {
-  port.write(`SP,${state},${duration}\r`)
+export async function setPenState(port, args) {
+  const { state, duration } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`SP,${state},${duration}\r`)
+    resolve({ type: 'SP', ...args })
+  })
 }
 
 // Motors
@@ -164,8 +205,13 @@ export function setPenState(port, state, duration = 150) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#EM
  */
 
-export function enableMotors(port, { enable1, enable2 }) {
-  port.write(`EM,${enable1},${enable2}\r`)
+export async function enableMotors(port, args) {
+  const { enable1, enable2 } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`EM,${enable1},${enable2}\r`)
+    resolve({ type: 'EM', ...args })
+  })
 }
 
 /**
@@ -234,12 +280,31 @@ export function enableMotors(port, { enable1, enable2 }) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SM
  */
 
-export async function stepperMove(port, { duration, axisSteps1, axisSteps2 }) {
-  return new Promise(resolve => {
-    port.write(`SM,${duration},${axisSteps1},${axisSteps2}\r`)
-    setTimeout(() => {
-      resolve()
-    }, getTimeout(duration))
+export async function stepperMove(port, args) {
+  const { duration, axisSteps1, axisSteps2 } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`SM,${duration},${axisSteps1},${axisSteps2}\r`)
+    resolve({ type: 'SM', ...args })
+  })
+}
+
+export async function lowLevelMove(port, args) {
+  const {
+    rateTerm1,
+    axisSteps1,
+    deltaR1,
+    rateTerm2,
+    axisSteps2,
+    deltaR2
+  } = args
+
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(
+      `LM,${rateTerm1},${axisSteps1},${deltaR1},${rateTerm2},${axisSteps2},${deltaR2}\r`
+    )
+    resolve({ type: 'LM', ...args })
   })
 }
 
@@ -287,6 +352,10 @@ export async function stepperMove(port, { duration, axisSteps1, axisSteps2 }) {
  *  Motor2Status is 1 if motor 2 is currently moving, and 0 if it is idle.
  */
 
-export function queryMotor(port) {
-  port.write('QM\r')
+export async function queryMotor(port) {
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write('QM\r')
+    resolve({ type: 'QM' })
+  })
 }
