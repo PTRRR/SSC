@@ -130,8 +130,8 @@ export default class EBBController {
           const { type, duration, state, axisSteps1, axisSteps2 } = command
           switch (type) {
           case 'SM':
-            stepsX += axisSteps1
-            stepsY += axisSteps2
+            stepsX += Math.abs(axisSteps1)
+            stepsY += Math.abs(axisSteps2)
             printPoint(`${type} - [${axisSteps1}, ${axisSteps2}]`)
             break
           case 'SP':
