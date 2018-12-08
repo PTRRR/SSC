@@ -3,7 +3,7 @@ import { printPoint, clamp } from '../../utils'
 const gcodeToObject = require('gcode-json-converter').gcodeToObject
 
 export default class EBBController {
-  constructor() {
+  constructor () {
     this.port = null
     this.config = null
 
@@ -14,12 +14,12 @@ export default class EBBController {
     this.speed = 50
   }
 
-  async initializeController(port, config) {
+  async initializeController (port, config) {
     this.initializeSerialConnection(port)
     await this.configureController(config)
   }
 
-  initializeSerialConnection(port) {
+  initializeSerialConnection (port) {
     this.port = port
     this.port.on('data', buffer => {
       const datas = buffer.toString('utf-8').split(/\n\r|\r\n/)
@@ -28,7 +28,7 @@ export default class EBBController {
     })
   }
 
-  async configureController(config) {
+  async configureController (config) {
     this.config = config
     const { minServoHeight, maxServoHeight, servoRate } = this.config
     await this.reset()
@@ -42,11 +42,11 @@ export default class EBBController {
     this.disableStepperMotors()
   }
 
-  getConfig() {
+  getConfig () {
     return this.config
   }
 
-  async feed(rawGcode) {
+  async feed (rawGcode) {
     for (const gcode of rawGcode.split('\n')) {
       const parsedGcode = gcodeToObject(gcode)
       this.pendingCommands.push(parsedGcode)
@@ -58,14 +58,14 @@ export default class EBBController {
     }
   }
 
-  async writeNextCommand() {
+  async writeNextCommand () {
     if (this.pendingCommands.length > 0) {
       const nextCommand = this.pendingCommands.shift()
       return this.executeCommand(nextCommand)
     }
   }
 
-  async executeCommand(gcodeCommand) {
+  async executeCommand (gcodeCommand) {
     const { drawingSpeed, movingSpeed } = this.config
     const { command, args } = gcodeCommand
 
@@ -95,7 +95,7 @@ export default class EBBController {
     }
   }
 
-  async wait(delay) {
+  async wait (delay) {
     return new Promise(resolve => {
       setTimeout(() => {
         resolve()
@@ -103,7 +103,7 @@ export default class EBBController {
     })
   }
 
-  async waitOnCommand(promise) {
+  async waitOnCommand (promise) {
     return new Promise(resolve => {
       promise.then(({ duration }) => {
         if (duration) {
@@ -117,7 +117,7 @@ export default class EBBController {
     })
   }
 
-  async run() {
+  async run () {
     console.log('Printing...')
     const start = new Date()
 
@@ -146,6 +146,7 @@ export default class EBBController {
       })
     }
 
+    await this.waitOnCommand(this.raiseBrush())
     const end = new Date()
     const elapsedTime = end.getTime() - start.getTime()
     await this.wait(motionDuration - elapsedTime)
@@ -159,7 +160,6 @@ export default class EBBController {
     console.log('\n-------------------')
 
     // Start end sequences
-    await this.waitOnCommand(this.raiseBrush())
     this.speed = 90
     await this.waitOnCommand(this.moveTo(0, 0))
     this.disableStepperMotors()
@@ -167,57 +167,57 @@ export default class EBBController {
     this.stop()
   }
 
-  stop() {
+  stop () {
     this.isRunning = false
     this.pendingCommands = []
   }
 
   // Configuration
 
-  async reset() {
+  async reset () {
     return helpers.reset(this.port)
   }
 
-  async setServoMinHeight(minHeight) {
+  async setServoMinHeight (minHeight) {
     return helpers.stepperAndServoModeConfigure(this.port, {
       parameter: 4,
       integer: minHeight
     })
   }
 
-  async setServoMaxHeight(maxHeight) {
+  async setServoMaxHeight (maxHeight) {
     return helpers.stepperAndServoModeConfigure(this.port, {
       parameter: 5,
       integer: maxHeight
     })
   }
 
-  async setServoRate(servoRate) {
+  async setServoRate (servoRate) {
     return helpers.stepperAndServoModeConfigure(this.port, {
       parameter: 10,
       integer: servoRate
     })
   }
 
-  async enableStepperMotors() {
+  async enableStepperMotors () {
     return helpers.enableMotors(this.port, { enable1: 1, enable2: 1 })
   }
 
-  async disableStepperMotors() {
+  async disableStepperMotors () {
     return helpers.enableMotors(this.port, { enable1: 0, enable2: 0 })
   }
 
   // Movements
 
-  async lowerBrush() {
+  async lowerBrush () {
     return helpers.setPenState(this.port, { state: 0, duration: 150 })
   }
 
-  async raiseBrush() {
+  async raiseBrush () {
     return helpers.setPenState(this.port, { state: 1, duration: 150 })
   }
 
-  async moveTo(targetX, targetY) {
+  async moveTo (targetX, targetY) {
     const [x, y] = this.position
     const {
       maxStepsX,
@@ -251,7 +251,7 @@ export default class EBBController {
   }
 
   // TODO: Implement low level move
-  async lowLevelMoveTo(targetX, targetY) {
+  async lowLevelMoveTo (targetX, targetY) {
     const [x, y] = this.position
     const {
       maxStepsX,

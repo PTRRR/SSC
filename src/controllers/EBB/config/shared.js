@@ -30,8 +30,13 @@ const testFormat = {
   maxStepsY: 15000
 }
 
+const custom = {
+  maxStepsX: 240 * MILLIMETER_IN_STEPS,
+  maxStepsY: 320 * 0.5 * MILLIMETER_IN_STEPS
+}
+
 export const controllerConfig = {
-  ...A5_HORIZONTAL,
+  ...custom,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
