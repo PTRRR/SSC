@@ -3,9 +3,9 @@ export class SocketClient {
     this.socket = socket
   }
 
-  send(type, message) {
+  send(type, data) {
     try {
-      this.socket.send(JSON.stringify({ type, message }))
+      this.socket.send(JSON.stringify({ type, data }))
     } catch (e) {
       console.error(e)
     }

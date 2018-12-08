@@ -11,7 +11,7 @@ export default class EBBController {
     this.pendingCommands = []
 
     this.position = [0, 0]
-    this.speed = 80
+    this.speed = 50
   }
 
   async initializeController(port, config) {
@@ -42,6 +42,10 @@ export default class EBBController {
     this.disableStepperMotors()
   }
 
+  getConfig() {
+    return this.config
+  }
+
   async feed(rawGcode) {
     for (const gcode of rawGcode.split('\n')) {
       const parsedGcode = gcodeToObject(gcode)
@@ -65,25 +69,29 @@ export default class EBBController {
     const { drawingSpeed, movingSpeed } = this.config
     const { command, args } = gcodeCommand
 
-    switch (command) {
-    case 'G0': {
-      const { x, y } = args
-      this.speed = movingSpeed
-      return this.moveTo(x, y)
-    }
-    case 'G1': {
-      const { x, y } = args
-      this.speed = drawingSpeed
-      return this.moveTo(x, y)
-    }
-    case 'G10': {
-      this.isDrawing = false
-      return this.raiseBrush()
-    }
-    case 'G11': {
-      this.isDrawing = true
-      return this.lowerBrush()
-    }
+    if (command) {
+      switch (command) {
+      case 'G0': {
+        const { x, y } = args
+        this.speed = movingSpeed
+        return this.moveTo(x, y)
+      }
+      case 'G1': {
+        const { x, y } = args
+        this.speed = drawingSpeed
+        return this.moveTo(x, y)
+      }
+      case 'G10': {
+        this.isDrawing = false
+        return this.raiseBrush()
+      }
+      case 'G11': {
+        this.isDrawing = true
+        return this.lowerBrush()
+      }
+      }
+    } else {
+      return null
     }
   }
 
@@ -117,8 +125,9 @@ export default class EBBController {
     let stepsX = 0
     let stepsY = 0
     while (this.pendingCommands.length > 0 && this.isRunning) {
-      await this.writeNextCommand().then(
-        ({ type, duration, state, axisSteps1, axisSteps2 }) => {
+      await this.writeNextCommand().then(command => {
+        if (command) {
+          const { type, duration, state, axisSteps1, axisSteps2 } = command
           switch (type) {
           case 'SM':
             stepsX += axisSteps1
@@ -134,7 +143,7 @@ export default class EBBController {
             motionDuration += duration
           }
         }
-      )
+      })
     }
 
     const end = new Date()
@@ -155,10 +164,12 @@ export default class EBBController {
     await this.waitOnCommand(this.moveTo(0, 0))
     this.disableStepperMotors()
     console.log('Finished printing')
+    this.stop()
   }
 
   stop() {
     this.isRunning = false
+    this.pendingCommands = []
   }
 
   // Configuration

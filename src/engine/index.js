@@ -46,7 +46,16 @@ export class SSCEngine {
         const websocketServer = new WebSocketServer(this.serverConfig)
         await websocketServer.initializeServer()
         websocketServer.onConnection(send => {
-          send('SSC: Successfully connected!')
+          console.log('Client connection')
+          send('feedback', 'SSC: Successfully connected!')
+        })
+
+        websocketServer.onMessage((type, data, send) => {
+          if (this.controller[type]) {
+            send(type, this.controller[type](data))
+          } else {
+            send(type, 'Can not be treated')
+          }
         })
         console.log('SERVER INITIALIZED')
 
