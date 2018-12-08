@@ -1,2 +1,2 @@
-export * from './Socket'
+export * from './SocketClient'
 export * from './WebSocketServer'

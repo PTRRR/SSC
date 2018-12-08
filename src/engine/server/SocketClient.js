@@ -1,4 +1,4 @@
-export class Socket {
+export class SocketClient {
   constructor(socket) {
     this.socket = socket
   }
