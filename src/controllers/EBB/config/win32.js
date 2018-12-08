@@ -1,6 +1,6 @@
 import { controllerConfig } from './shared'
 
-export const window = {
+export const win32 = {
   serialConfig: {
     manufacturer: 'Microsoft',
     vendorId: '04D8',

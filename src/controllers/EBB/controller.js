@@ -1,309 +1,293 @@
-/**
- * EBB Controller
- *
- * This controller is intended to send serial commands to the EggBotBoard.
- * More informations at http://evil-mad.github.io/EggBot/ebb.html
- */
-
-import BaseController from '../BaseController'
-import * as helper from './helper'
+import * as helpers from './helpers'
 import { printPoint, clamp } from '../../utils'
+const gcodeToObject = require('gcode-json-converter').gcodeToObject
 
-// Default values
-let _minStepsPerMillisecond = 0.07
-let _maxStepsPerMillisecond = 15
-let _stepPosition = [0, 0]
+export default class EBBController {
+  constructor() {
+    this.port = null
+    this.config = null
 
-let _position = [0, 0]
-let _penState = 0
+    this.isRunning = false
+    this.pendingCommands = []
 
-let _speed = 0
-let _drawingSpeed = 30
-let _movingSpeed = 80
-let _maxStepsX = 0
-let _maxStepsY = 0
-let _minServoHeight = 23000
-let _maxServoHeight = 18000
-let _servoRate = 30000
-let _minDeltaPositionForDistinctLines = 70
-
-let _elapsedTime = 0
-let _totalStepsX = 0
-let _totalStepsY = 0
-
-export default class EBBController extends BaseController {
-  async configure(config = {}) {
-    this._port.on('data', buffer => {
-      // TODO: Handle data
-      const data = buffer.toString('utf-8').split(',')
-    })
-
-    await super.configure(config)
-
-    // Setup controller with configured values
-    await this.reset()
-    await this.setServoMinHeight(_minServoHeight)
-    await this.setServoMaxHeight(_maxServoHeight)
-    await this.setServoRate(_servoRate)
-
-    // Test
-    // await this.lowerBrush()
-    // await this.raiseBrush()
-    await this.disableStepperMotors()
+    this.position = [0, 0]
+    this.speed = 80
   }
 
-  async executeGCODE(gcode) {
-    if (!this._isRunning) return
+  async initializeController(port, config) {
+    this.initializeSerialConnection(port)
+    await this.configureController(config)
+  }
 
-    // Parsed values from a GCODE command
-    const { command, args } = gcode
+  initializeSerialConnection(port) {
+    this.port = port
+    this.port.on('data', buffer => {
+      const datas = buffer.toString('utf-8').split(/\n\r|\r\n/)
+      datas.splice(-1, 1)
+      // Handle here serial data
+    })
+  }
 
-    // We considere G0 commands
-    if (command === 'G0') {
-      const { x, y, z } = args
-      const draw = z
+  async configureController(config) {
+    this.config = config
+    const { minServoHeight, maxServoHeight, servoRate } = this.config
+    await this.reset()
+    await this.setServoMinHeight(minServoHeight)
+    await this.setServoMaxHeight(maxServoHeight)
+    await this.setServoRate(servoRate)
 
-      // Check first if the point to draw is different from the last one.
-      // Otherwise just skip it.
-      if (
-        Math.abs(_position[0] - x) > _minDeltaPositionForDistinctLines ||
-        Math.abs(_position[1] - y) > _minDeltaPositionForDistinctLines
-      ) {
-        // Check if the last draw state is the same of the current one
-        // and if so skip this.
-        if (_penState !== draw) {
-          if (draw) {
-            await this.lowerBrush()
-          } else {
-            await this.raiseBrush()
-          }
-        }
+    // Configuration feedback
+    await this.waitOnCommand(this.lowerBrush())
+    await this.waitOnCommand(this.raiseBrush())
+    this.disableStepperMotors()
+  }
 
-        // Adapt speed when drawing or moving
-        if (draw) {
-          this.speed = _drawingSpeed
-        } else {
-          this.speed = _movingSpeed
-        }
+  async feed(rawGcode) {
+    for (const gcode of rawGcode.split('\n')) {
+      const parsedGcode = gcodeToObject(gcode)
+      this.pendingCommands.push(parsedGcode)
+    }
 
-        // Move
-        await this.moveTo(x, y)
-      }
+    if (!this.isRunning) {
+      this.isRunning = true
+      this.run()
     }
   }
 
-  async start() {
-    // Keep track of the time when the command started
-    const date = new Date()
-    _elapsedTime = date.getTime()
-
-    // Start sequence
-    await super.start()
-
-    // Reset state
-    this.speed = _movingSpeed
-    await this.raiseBrush()
-    await this.resetStepperPosition()
-
-    // Disable stepper motors
-    await this.disableStepperMotors()
-
-    _elapsedTime = date.getTime() - _elapsedTime
-
-    // Print stats
-    printPoint(`COMPLETED IN: ${_elapsedTime / 1000}s`)
-    printPoint(`TOTAL STEPS X: ${_totalStepsX}`)
-    printPoint(`TOTAL STEPS Y: ${_totalStepsY}`)
+  async writeNextCommand() {
+    if (this.pendingCommands.length > 0) {
+      const nextCommand = this.pendingCommands.shift()
+      return this.executeCommand(nextCommand)
+    }
   }
 
-  // Getters & Setters
-  set minStepsPerMillisecond(minStepsPerMillisecond) {
-    _minStepsPerMillisecond = minStepsPerMillisecond
+  async executeCommand(gcodeCommand) {
+    const { drawingSpeed, movingSpeed } = this.config
+    const { command, args } = gcodeCommand
+
+    switch (command) {
+    case 'G0': {
+      const { x, y } = args
+      this.speed = movingSpeed
+      return this.moveTo(x, y)
+    }
+    case 'G1': {
+      const { x, y } = args
+      this.speed = drawingSpeed
+      return this.moveTo(x, y)
+    }
+    case 'G10': {
+      this.isDrawing = false
+      return this.raiseBrush()
+    }
+    case 'G11': {
+      this.isDrawing = true
+      return this.lowerBrush()
+    }
+    }
   }
 
-  get minStepsPerMillisecond() {
-    return _minStepsPerMillisecond
+  async wait(delay) {
+    return new Promise(resolve => {
+      setTimeout(() => {
+        resolve()
+      }, delay)
+    })
   }
 
-  set maxStepsPerMillisecond(maxStepsPerMillisecond) {
-    _maxStepsPerMillisecond = maxStepsPerMillisecond
+  async waitOnCommand(promise) {
+    return new Promise(resolve => {
+      promise.then(({ duration }) => {
+        if (duration) {
+          setTimeout(() => {
+            resolve()
+          }, duration)
+        } else {
+          resolve()
+        }
+      })
+    })
   }
 
-  get maxStepsPerMillisecond() {
-    return _maxStepsPerMillisecond
+  async run() {
+    console.log('Printing...')
+    const start = new Date()
+
+    let motionDuration = 0
+    let stepsX = 0
+    let stepsY = 0
+    while (this.pendingCommands.length > 0 && this.isRunning) {
+      await this.writeNextCommand().then(
+        ({ type, duration, state, axisSteps1, axisSteps2 }) => {
+          switch (type) {
+          case 'SM':
+            stepsX += axisSteps1
+            stepsY += axisSteps2
+            printPoint(`${type} - [${axisSteps1}, ${axisSteps2}]`)
+            break
+          case 'SP':
+            printPoint(`${type} - [${state}]`)
+            break
+          }
+
+          if (duration) {
+            motionDuration += duration
+          }
+        }
+      )
+    }
+
+    const end = new Date()
+    const elapsedTime = end.getTime() - start.getTime()
+    await this.wait(motionDuration - elapsedTime)
+
+    // TODO: Improve logs
+    console.log('-------------------\n')
+    console.log(
+      `TOTAL MOTION DURATION: ${Math.round(motionDuration / 1000)} seconds`
+    )
+    console.log(`TOTAL STEPS [X, Y]: [${stepsX}, ${stepsY}]`)
+    console.log('\n-------------------')
+
+    // Start end sequences
+    await this.waitOnCommand(this.raiseBrush())
+    this.speed = 90
+    await this.waitOnCommand(this.moveTo(0, 0))
+    this.disableStepperMotors()
+    console.log('Finished printing')
   }
 
-  set speed(speed) {
-    _speed = speed
+  stop() {
+    this.isRunning = false
   }
 
-  get speed() {
-    return _speed
-  }
-
-  set drawingSpeed(drawingSpeed) {
-    _drawingSpeed = drawingSpeed
-  }
-
-  get drawingSpeed() {
-    return _drawingSpeed
-  }
-
-  set movingSpeed(movingSpeed) {
-    _movingSpeed = movingSpeed
-  }
-
-  get movingSpeed() {
-    return _movingSpeed
-  }
-
-  set stepPosition(stepPosition) {
-    _stepPosition = stepPosition
-  }
-
-  get stepPosition() {
-    return _stepPosition
-  }
-
-  set position(position) {
-    _position = position
-  }
-
-  get position() {
-    return _position
-  }
-
-  set maxStepsX (maxStepsX) {
-    _maxStepsX = maxStepsX
-  }
-
-  get maxStepsX () {
-    return _maxStepsX
-  }
-
-  set maxStepsY (maxStepsY) {
-    _maxStepsY = maxStepsY
-  }
-
-  get maxStepsY () {
-    return _maxStepsY
-  }
-
-  set minDeltaPositionForDistinctLines(minDeltaPositionForDistinctLines) {
-    _minDeltaPositionForDistinctLines = minDeltaPositionForDistinctLines
-  }
-
-  get minDeltaPositionForDistinctLines () {
-    return _minDeltaPositionForDistinctLines
-  }
-
-  set minServoHeight(minServoHeight) {
-    _minServoHeight = minServoHeight
-  }
-
-  get minServoHeight() {
-    return this.minServoHeight
-  }
-
-  set maxServoHeight(maxServoHeight) {
-    _maxServoHeight = maxServoHeight
-  }
-
-  get maxServoHeight() {
-    return this.maxServoHeight
-  }
-
-  set servoRate(servoRate) {
-    _servoRate = servoRate
-  }
-
-  get servoRate() {
-    return this.servoRate
-  }
+  // Configuration
 
   async reset() {
-    await helper.reset(this._port)
+    return helpers.reset(this.port)
   }
 
   async setServoMinHeight(minHeight) {
-    await helper.stepperAndServoModeConfigure(this._port, {
+    return helpers.stepperAndServoModeConfigure(this.port, {
       parameter: 4,
       integer: minHeight
     })
   }
 
   async setServoMaxHeight(maxHeight) {
-    await helper.stepperAndServoModeConfigure(this._port, {
+    return helpers.stepperAndServoModeConfigure(this.port, {
       parameter: 5,
       integer: maxHeight
     })
   }
 
   async setServoRate(servoRate) {
-    await helper.stepperAndServoModeConfigure(this._port, {
+    return helpers.stepperAndServoModeConfigure(this.port, {
       parameter: 10,
       integer: servoRate
     })
   }
 
-  async lowerBrush() {
-    _penState = 1
-    await helper.setPenState(this._port, 0)
-  }
-
-  async raiseBrush() {
-    _penState = 0
-    await helper.setPenState(this._port, 1)
-  }
-
   async enableStepperMotors() {
-    await helper.enableMotors(this._port, { enable1: 1, enable2: 1 })
+    return helpers.enableMotors(this.port, { enable1: 1, enable2: 1 })
   }
 
   async disableStepperMotors() {
-    await helper.enableMotors(this._port, { enable1: 0, enable2: 0 })
+    return helpers.enableMotors(this.port, { enable1: 0, enable2: 0 })
   }
 
-  async moveTo(targetPositionX, targetPositionY) {
-    const [x, y] = _position
+  // Movements
 
-    // Constrict movement to the available area
-    targetPositionX = clamp(targetPositionX, 0, this.maxStepsX)
-    targetPositionY = clamp(targetPositionY, 0, this.maxStepsY)
+  async lowerBrush() {
+    return helpers.setPenState(this.port, { state: 0, duration: 150 })
+  }
 
-    // Compute steps
-    // See EBB Command Set Documentation for more informations
-    const lastStepsX = x + y
-    const lastStepsY = x - y
-    const targetStepsX = targetPositionX + targetPositionY
-    const targetStepsY = targetPositionX - targetPositionY
-    const amountStepX = Math.round(targetStepsX - lastStepsX)
-    const amountStepY = Math.round(targetStepsY - lastStepsY)
+  async raiseBrush() {
+    return helpers.setPenState(this.port, { state: 1, duration: 150 })
+  }
 
-    // Compute the duration of the movement in milliseconds
-    const speedPercent = _speed / 100
-    const stepsPerMillisecond =
-      _minStepsPerMillisecond +
-      (_maxStepsPerMillisecond - _minStepsPerMillisecond) * speedPercent
-    const steps =
-      Math.abs(amountStepX) > Math.abs(amountStepY) ? amountStepX : amountStepY
-    const duration = Math.round(Math.abs(steps / stepsPerMillisecond))
+  async moveTo(targetX, targetY) {
+    const [x, y] = this.position
+    const {
+      maxStepsX,
+      maxStepsY,
+      minStepsPerMillisecond,
+      maxStepsPerMillisecond
+    } = this.config
 
-    // Update position
-    _position = [targetPositionX, targetPositionY]
+    targetX = clamp(targetX, 0, maxStepsX)
+    targetY = clamp(targetY, 0, maxStepsY)
 
-    // Keep track of steps
-    _totalStepsX += Math.abs(amountStepX)
-    _totalStepsY += Math.abs(amountStepY)
+    const { amountX, amountY } = helpers.getAmountSteps(x, y, targetX, targetY)
+    const duration = helpers.getDuration(
+      this.speed,
+      minStepsPerMillisecond,
+      maxStepsPerMillisecond,
+      amountX,
+      amountY
+    )
 
-    await helper.stepperMove(this._port, {
+    // Reset position
+    this.position = [targetX, targetY]
+
+    const args = {
       duration,
-      axisSteps1: amountStepX,
-      axisSteps2: amountStepY
-    })
+      axisSteps1: amountX,
+      axisSteps2: amountY
+    }
+
+    return helpers.stepperMove(this.port, args)
   }
 
-  async resetStepperPosition() {
-    await this.moveTo(0, 0)
+  // TODO: Implement low level move
+  async lowLevelMoveTo(targetX, targetY) {
+    const [x, y] = this.position
+    const {
+      maxStepsX,
+      maxStepsY,
+      minStepsPerMillisecond,
+      maxStepsPerMillisecond
+    } = this.config
+
+    const STEP = 40 // μs
+    const STEP_IN_SECONDS = 0.00004
+    const ONE_STEP = 2147483648
+
+    targetX = clamp(targetX, 0, maxStepsX)
+    targetY = clamp(targetY, 0, maxStepsY)
+
+    const { amountX, amountY } = helpers.getAmountSteps(x, y, targetX, targetY)
+    const duration = helpers.getDuration(
+      this.speed,
+      minStepsPerMillisecond,
+      maxStepsPerMillisecond,
+      amountX,
+      amountY
+    )
+
+    // Reset position
+    this.position = [targetX, targetY]
+
+    const stepsPerSeconds = 85855
+
+    // const rateTerm1 =
+    // console.log(amountX, amountY)
+
+    const rateTerm1 = Math.abs(
+      Math.round(stepsPerSeconds * (amountX / (duration / 1000)))
+    )
+    const rateTerm2 = Math.abs(
+      Math.round(stepsPerSeconds * (amountY / (duration / 1000)))
+    )
+
+    return helpers.lowLevelMove(this.port, {
+      rateTerm1,
+      axisSteps1: amountX,
+      deltaR1: 0,
+      rateTerm2,
+      axisSteps2: amountY,
+      deltaR2: 0,
+      duration
+    })
   }
 }

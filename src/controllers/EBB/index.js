@@ -1,7 +1,7 @@
 import * as config from './config'
-import Controller from './controller'
+import controller from './controller'
 
 export const EBB = {
   config,
-  Controller
+  controller
 }

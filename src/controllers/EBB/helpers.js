@@ -1,43 +1,98 @@
-/**
-   *
-   * EBB (EIBOTBOARD) COMMAND SET
-   * LOWER-LEVEL FUNCTIONS
-   *
-   * These methods provide a way of sending serial commands to the EBB according
-   * to the EiBotBoard Command Set document (http://evil-mad.github.io/EggBot/ebb.html).
-   * The following methods are returning a promise when the command have finished
-   * executing.
-   *
-   * These commands shouldn't be used directly but only in the higher-level
-   * functions defined above.
-   */
+// Some constants
+const MILIMETER_PER_STEP = 0.0125
+export const constants = {
+  MILIMETER_PER_STEP
+}
 
 /**
-   * "R" — Reset
-   *
-   * This command reinitializes the the internal state of the EBB to the default
-   * power on state. This includes setting all I/O pins in their power on states,
-   * stopping any ongoing timers or servo outputs, etc. It does NOT do a complete
-   * reset of the EBB - this command does not cause the EBB to drop off the USB
-   * and come back, it does not reinitialize the processor's internal register,
-   * etc. It is simply a high level EBB-application reset. If you want to completely
-   * reset the board, use the RB command.
-   *
-   * Example: R<CR>
-  */
+ *
+ * EBB (EIBOTBOARD) COMMAND SET
+ * LOWER-LEVEL FUNCTIONS
+ *
+ * These methods provide a way of sending serial commands to the EBB according
+ * to the EiBotBoard Command Set document (http://evil-mad.github.io/EggBot/ebb.html).
+ * The following methods are returning a promise when the command have finished
+ * executing.
+ *
+ * These commands shouldn't be used directly but only in the higher-level
+ * functions defined above.
+ */
 
-export async function reset (port) {
+/**
+ * Utils
+ */
+
+export function getAmountSteps(x, y, targetX, targetY) {
+  // Compute steps
+  // See EBB Command Set Documentation for more informations
+  const lastStepsX = x + y
+  const lastStepsY = x - y
+  const targetStepsX = targetX + targetY
+  const targetStepsY = targetX - targetY
+  const amountX = Math.round(targetStepsX - lastStepsX)
+  const amountY = Math.round(targetStepsY - lastStepsY)
+  return { amountX, amountY }
+}
+
+export function getDuration(
+  speed,
+  minStepsPerMillisecond,
+  maxStepsPerMillisecond,
+  amountX,
+  amountY
+) {
+  const speedPercent = speed / 100
+  const stepsPerMillisecond =
+    minStepsPerMillisecond +
+    (maxStepsPerMillisecond - minStepsPerMillisecond) * speedPercent
+  const steps = Math.abs(amountX) > Math.abs(amountY) ? amountX : amountY
+  const duration = Math.round(Math.abs(steps / stepsPerMillisecond))
+  return duration
+}
+
+export async function wait(duration) {
   return new Promise(resolve => {
-    port.write('R\r')
     setTimeout(() => {
       resolve()
-    }, 1000)
+    }, duration)
+  })
+}
+
+export async function reboot(port) {
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write('RB\r')
+    resolve({ type: 'RB' })
+  })
+}
+
+/**
+ * "R" — Reset
+ * Execution: Immediate
+ *
+ * This command reinitializes the the internal state of the EBB to the default
+ * power on state. This includes setting all I/O pins in their power on states,
+ * stopping any ongoing timers or servo outputs, etc. It does NOT do a complete
+ * reset of the EBB - this command does not cause the EBB to drop off the USB
+ * and come back, it does not reinitialize the processor's internal register,
+ * etc. It is simply a high level EBB-application reset. If you want to completely
+ * reset the board, use the RB command.
+ *
+ * Example: R<CR>
+ */
+
+export async function reset(port) {
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write('R\r')
+    resolve({ type: 'R' })
   })
 }
 
 /**
  * "SC" — Stepper and Servo Mode Configure
  * Command: SC,value1,value2<CR>
+ * Execution: Immediate
  *
  * This command allows you to configure the motor control modes that the EBB
  * uses, including parameters of the servo or solenoid motor used for raising
@@ -62,13 +117,12 @@ export async function reset (port) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SC
  */
 
-export async function stepperAndServoModeConfigure (
-  port,
-  { parameter, integer }
-) {
-  return new Promise(resolve => {
-    port.write(`SC,${parameter},${integer}\r`)
-    resolve()
+export async function stepperAndServoModeConfigure(port, args) {
+  const { parameter, integer } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`SC,${parameter},${integer}\r`)
+    resolve({ type: 'SC', ...args })
   })
 }
 
@@ -99,13 +153,12 @@ export async function stepperAndServoModeConfigure (
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SP
  */
 
-export async function setPenState (port, state) {
-  return new Promise(resolve => {
-    port.write(`SP,${state}\r`)
-
-    setTimeout(() => {
-      resolve()
-    }, 200)
+export async function setPenState(port, args) {
+  const { state, duration } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`SP,${state},${duration}\r`)
+    resolve({ type: 'SP', ...args })
   })
 }
 
@@ -113,6 +166,7 @@ export async function setPenState (port, state) {
 /**
  * "EM" — Enable Motors
  * Command: EM,Enable1[,Enable2]<CR>
+ * Execution: Immediate
  *
  * Enable or disable stepper motors and set step mode.
  * Each stepper motor may be independently enabled (energized) or disabled
@@ -149,12 +203,14 @@ export async function setPenState (port, state) {
  * change motor 2's enable status. (Enable2 is optional)
  *
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#EM
-*/
+ */
 
-export async function enableMotors (port, { enable1, enable2 }) {
-  return new Promise(resolve => {
-    port.write(`EM,${enable1},${enable2}\r`)
-    resolve()
+export async function enableMotors(port, args) {
+  const { enable1, enable2 } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`EM,${enable1},${enable2}\r`)
+    resolve({ type: 'EM', ...args })
   })
 }
 
@@ -224,16 +280,31 @@ export async function enableMotors (port, { enable1, enable2 }) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SM
  */
 
-export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
-  return new Promise(resolve => {
-    port.write(`SM,${duration},${axisSteps1},${axisSteps2}\r`)
+export async function stepperMove(port, args) {
+  const { duration, axisSteps1, axisSteps2 } = args
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(`SM,${duration},${axisSteps1},${axisSteps2}\r`)
+    resolve({ type: 'SM', ...args })
+  })
+}
 
-    // This is a bit a hack...
-    // Wait a bit less than the actual duration to be sure to put the next
-    // command in the motion queue of the EBB so that the movements are smoother.
-    setTimeout(() => {
-      resolve()
-    }, duration - 1)
+export async function lowLevelMove(port, args) {
+  const {
+    rateTerm1,
+    axisSteps1,
+    deltaR1,
+    rateTerm2,
+    axisSteps2,
+    deltaR2
+  } = args
+
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write(
+      `LM,${rateTerm1},${axisSteps1},${deltaR1},${rateTerm2},${axisSteps2},${deltaR2}\r`
+    )
+    resolve({ type: 'LM', ...args })
   })
 }
 
@@ -281,9 +352,10 @@ export async function stepperMove (port, { duration, axisSteps1, axisSteps2 }) {
  *  Motor2Status is 1 if motor 2 is currently moving, and 0 if it is idle.
  */
 
-export async function queryMotor (port) {
-  return new Promise(resolve => { 
-    port.write('QM\r')
-    resolve()
+export async function queryMotor(port) {
+  return new Promise(async resolve => {
+    await port.drain()
+    await port.write('QM\r')
+    resolve({ type: 'QM' })
   })
 }
