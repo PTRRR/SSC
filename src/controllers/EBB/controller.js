@@ -8,6 +8,7 @@ export default class EBBController {
     this.config = null
 
     this.isRunning = false
+    this.isDrawing = false
     this.pendingCommands = []
 
     this.position = [0, 0]
@@ -82,11 +83,9 @@ export default class EBBController {
         return this.moveTo(x, y)
       }
       case 'G10': {
-        this.isDrawing = false
         return this.raiseBrush()
       }
       case 'G11': {
-        this.isDrawing = true
         return this.lowerBrush()
       }
       }
@@ -124,15 +123,20 @@ export default class EBBController {
     let motionDuration = 0
     let stepsX = 0
     let stepsY = 0
+    let totalDistance = 0
     while (this.pendingCommands.length > 0 && this.isRunning) {
       await this.writeNextCommand().then(command => {
         if (command) {
-          const { type, duration, state, axisSteps1, axisSteps2 } = command
+          const { type, duration, state, deltaStepsX, deltaStepsY, isDrawing } = command
           switch (type) {
           case 'SM':
-            stepsX += Math.abs(axisSteps1)
-            stepsY += Math.abs(axisSteps2)
-            printPoint(`${type} - [${axisSteps1}, ${axisSteps2}]`)
+            stepsX += Math.abs(deltaStepsX)
+            stepsY += Math.abs(deltaStepsY)
+            if (isDrawing) {
+              const distance = Math.sqrt(Math.pow(deltaStepsX / 80, 2) + Math.pow(deltaStepsY / 80, 2))
+              totalDistance += distance
+            }
+            printPoint(`${type} - [${deltaStepsX}, ${deltaStepsY}]`)
             break
           case 'SP':
             printPoint(`${type} - [${state}]`)
@@ -146,22 +150,24 @@ export default class EBBController {
       })
     }
 
-    await this.waitOnCommand(this.raiseBrush())
+    this.raiseBrush()
     const end = new Date()
     const elapsedTime = end.getTime() - start.getTime()
     await this.wait(motionDuration - elapsedTime)
-
     // TODO: Improve logs
     console.log('-------------------\n')
     console.log(
       `TOTAL MOTION DURATION: ${Math.round(motionDuration / 1000)} seconds`
     )
     console.log(`TOTAL STEPS [X, Y]: [${stepsX}, ${stepsY}]`)
+    console.log(`TOTAL DISTANCE IN MM [X, Y]: [${Math.round(stepsX / 80)}, ${Math.round(stepsY / 80)}]`)
+    console.log(`TOTAL DISTANCE IN CM: ${totalDistance / 10}`)
     console.log('\n-------------------')
 
     // Start end sequences
     this.speed = 90
     await this.waitOnCommand(this.moveTo(0, 0))
+    await this.wait(500)
     this.disableStepperMotors()
     console.log('Finished printing')
     this.stop()
@@ -210,10 +216,12 @@ export default class EBBController {
   // Movements
 
   async lowerBrush () {
+    this.isDrawing = true
     return helpers.setPenState(this.port, { state: 0, duration: 150 })
   }
 
   async raiseBrush () {
+    this.isDrawing = false
     return helpers.setPenState(this.port, { state: 1, duration: 150 })
   }
 
@@ -244,7 +252,10 @@ export default class EBBController {
     const args = {
       duration,
       axisSteps1: amountX,
-      axisSteps2: amountY
+      axisSteps2: amountY,
+      deltaStepsX: targetX - x,
+      deltaStepsY: targetY - y,
+      isDrawing: this.isDrawing
     }
 
     return helpers.stepperMove(this.port, args)
