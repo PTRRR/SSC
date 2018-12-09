@@ -2,30 +2,39 @@ import SerialPort from 'serialport'
 import { compareTo } from '../../utils'
 
 export class SerialConnection {
-  constructor(config = {}) {
+  constructor (config = {}) {
     this.port = null
     this.config = config
     this.isWriting = true
   }
 
-  async initializeConnection() {
+  async initializeConnection () {
     return new Promise(async (resolve, reject) => {
       const availablePorts = await SerialPort.list()
 
-      const port = availablePorts.find(it => {
-        return compareTo(it, this.config)
-      })
+      if (availablePorts.length > 0) {
+        const port = availablePorts.find(it => {
+          return compareTo(it, this.config)
+        })
 
-      if (port) {
-        this.port = new SerialPort(port.comName)
-        resolve(this.port)
+        if (port) {
+          this.port = new SerialPort(port.comName)
+          resolve(this.port)
+        } else {
+          console.log(this.config)
+          console.log(availablePorts)
+          reject(
+            `ERROR: No serial port were found that correspond to the config file.\n
+            Please edit the config file: ./controllers/[controllerName]/config/[os]`
+          )
+        }
       } else {
-        reject('Please edit the configuration file in the controller folder')
+        reject('ERROR: No serial ports were found')
       }
     })
   }
 
-  on(event, callback) {
+  on (event, callback) {
     if (this.port) {
       this.port.on(event, callback)
     } else {
@@ -33,7 +42,7 @@ export class SerialConnection {
     }
   }
 
-  async write(message) {
+  async write (message) {
     if (this.port) {
       return new Promise((resolve, reject) => {
         this.isWriting = true
@@ -51,7 +60,7 @@ export class SerialConnection {
     }
   }
 
-  async drain() {
+  async drain () {
     try {
       return new Promise((resolve, reject) => {
         this.port.drain(e => {

@@ -2,7 +2,7 @@ import os from 'os'
 import config from './config'
 import { SSCEngine } from './engine'
 
-async function app() {
+async function app () {
   const platform = os.platform()
   const engine = new SSCEngine({
     platform,

@@ -3,7 +3,7 @@ import { WebSocketServer } from './server'
 import * as controllers from '../controllers'
 
 export class SSCEngine {
-  constructor(config = {}) {
+  constructor (config = {}) {
     const { platform, controller, server } = config
 
     // Server config
@@ -26,9 +26,11 @@ export class SSCEngine {
     this.controller = new controllers[controller.name].controller()
   }
 
-  async start() {
+  async start () {
     return new Promise(async (resolve, reject) => {
-      await this.serialConnection.initializeConnection()
+      await this.serialConnection.initializeConnection().catch(e => {
+        reject(e)
+      })
 
       // Handle opening
       this.serialConnection.on('open', async () => {
