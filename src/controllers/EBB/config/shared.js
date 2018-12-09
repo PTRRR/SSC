@@ -36,7 +36,7 @@ const custom = {
 }
 
 export const controllerConfig = {
-  ...custom,
+  ...A5_VERTICAL,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
