@@ -36,7 +36,7 @@ const custom = {
 }
 
 export const controllerConfig = {
-  ...A5_HORIZONTAL,
+  ...custom,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
