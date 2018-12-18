@@ -25,6 +25,11 @@ const A4_HORIZONTAL = {
   maxStepsY: 210 * MILLIMETER_IN_STEPS
 }
 
+const A3_HORIZONTAL = {
+  maxStepsX: 420 * MILLIMETER_IN_STEPS,
+  maxStepsY: 297 * MILLIMETER_IN_STEPS
+}
+
 const testFormat = {
   maxStepsX: 20000,
   maxStepsY: 15000
@@ -35,14 +40,24 @@ const custom = {
   maxStepsY: 320 * 0.5 * MILLIMETER_IN_STEPS
 }
 
+const cart_post = {
+  maxStepsX: 105 * MILLIMETER_IN_STEPS,
+  maxStepsY: 150 * MILLIMETER_IN_STEPS
+}
+
+const cart_custom = {
+  maxStepsX: 420 * MILLIMETER_IN_STEPS,
+  maxStepsY: 105 * MILLIMETER_IN_STEPS
+}
+
 export const controllerConfig = {
-  ...A5_VERTICAL,
+  ...A4_VERTICAL,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
   minServoHeight: 20000,
   maxServoHeight: 16000,
-  drawingSpeed: 70,
+  drawingSpeed: 40,
   movingSpeed: 70,
   minDeltaPositionForDistinctLines: 2
 }
