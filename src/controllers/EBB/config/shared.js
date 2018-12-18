@@ -42,7 +42,7 @@ export const controllerConfig = {
   servoRate: 40000,
   minServoHeight: 20000,
   maxServoHeight: 16000,
-  drawingSpeed: 30,
+  drawingSpeed: 70,
   movingSpeed: 70,
   minDeltaPositionForDistinctLines: 2
 }
