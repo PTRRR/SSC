@@ -30,6 +30,21 @@ const A3_HORIZONTAL = {
   maxStepsY: 297 * MILLIMETER_IN_STEPS
 }
 
+const PetiteCarteDouble = {
+  maxStepsX: 210 * MILLIMETER_IN_STEPS,
+  maxStepsY: 150 * MILLIMETER_IN_STEPS
+}
+
+const PetiteCarteSimple = {
+  maxStepsX: 105 * MILLIMETER_IN_STEPS,
+  maxStepsY: 150 * MILLIMETER_IN_STEPS
+}
+
+const GrandeCarte = {
+  maxStepsX: 420 * MILLIMETER_IN_STEPS,
+  maxStepsY: 105 * MILLIMETER_IN_STEPS
+}
+
 const testFormat = {
   maxStepsX: 20000,
   maxStepsY: 15000

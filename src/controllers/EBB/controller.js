@@ -232,7 +232,7 @@ export default class EBBController {
     this.isDrawing = false
     return helpers.setPenState(this.port, { state: 1, duration: 150 })
   }
-
+  //80step = 1mm
   async moveTo (targetX, targetY) {
     const [x, y] = this.position
     const {
@@ -244,6 +244,8 @@ export default class EBBController {
 
     targetX = clamp(targetX, 0, maxStepsX)
     targetY = clamp(targetY, 0, maxStepsY)
+    //targetX = clamp(targetX, 0, maxStepsX)
+    //targetY = clamp(targetY, 0, maxStepsY)
 
     const { amountX, amountY } = helpers.getAmountSteps(x, y, targetX, targetY)
     const duration = helpers.getDuration(
