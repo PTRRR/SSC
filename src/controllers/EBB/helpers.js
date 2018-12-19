@@ -22,7 +22,7 @@ export const constants = {
  * Utils
  */
 
-export function getAmountSteps(x, y, targetX, targetY) {
+export function getAmountSteps (x, y, targetX, targetY) {
   // Compute steps
   // See EBB Command Set Documentation for more informations
   const lastStepsX = x + y
@@ -34,7 +34,7 @@ export function getAmountSteps(x, y, targetX, targetY) {
   return { amountX, amountY }
 }
 
-export function getDuration(
+export function getDuration (
   speed,
   minStepsPerMillisecond,
   maxStepsPerMillisecond,
@@ -50,7 +50,7 @@ export function getDuration(
   return duration
 }
 
-export async function wait(duration) {
+export async function wait (duration) {
   return new Promise(resolve => {
     setTimeout(() => {
       resolve()
@@ -58,7 +58,7 @@ export async function wait(duration) {
   })
 }
 
-export async function reboot(port) {
+export async function reboot (port) {
   return new Promise(async resolve => {
     await port.drain()
     await port.write('RB\r')
@@ -81,7 +81,7 @@ export async function reboot(port) {
  * Example: R<CR>
  */
 
-export async function reset(port) {
+export async function reset (port) {
   return new Promise(async resolve => {
     await port.drain()
     await port.write('R\r')
@@ -117,7 +117,7 @@ export async function reset(port) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SC
  */
 
-export async function stepperAndServoModeConfigure(port, args) {
+export async function stepperAndServoModeConfigure (port, args) {
   const { parameter, integer } = args
   return new Promise(async resolve => {
     await port.drain()
@@ -153,7 +153,7 @@ export async function stepperAndServoModeConfigure(port, args) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SP
  */
 
-export async function setPenState(port, args) {
+export async function setPenState (port, args) {
   const { state, duration } = args
   return new Promise(async resolve => {
     await port.drain()
@@ -205,7 +205,7 @@ export async function setPenState(port, args) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#EM
  */
 
-export async function enableMotors(port, args) {
+export async function enableMotors (port, args) {
   const { enable1, enable2 } = args
   return new Promise(async resolve => {
     await port.drain()
@@ -280,7 +280,7 @@ export async function enableMotors(port, args) {
  * For more informations see: http://evil-mad.github.io/EggBot/ebb.html#SM
  */
 
-export async function stepperMove(port, args) {
+export async function stepperMove (port, args) {
   const { duration, axisSteps1, axisSteps2 } = args
   return new Promise(async resolve => {
     await port.drain()
@@ -289,7 +289,7 @@ export async function stepperMove(port, args) {
   })
 }
 
-export async function lowLevelMove(port, args) {
+export async function lowLevelMove (port, args) {
   const {
     rateTerm1,
     axisSteps1,
@@ -352,7 +352,7 @@ export async function lowLevelMove(port, args) {
  *  Motor2Status is 1 if motor 2 is currently moving, and 0 if it is idle.
  */
 
-export async function queryMotor(port) {
+export async function queryMotor (port) {
   return new Promise(async resolve => {
     await port.drain()
     await port.write('QM\r')

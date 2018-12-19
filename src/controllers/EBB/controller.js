@@ -75,22 +75,22 @@ export default class EBBController {
 
     if (command) {
       switch (command) {
-        case 'G0': {
-          const { x, y } = args
-          this.speed = movingSpeed
-          return this.moveTo(x, y)
-        }
-        case 'G1': {
-          const { x, y } = args
-          this.speed = drawingSpeed
-          return this.moveTo(x, y)
-        }
-        case 'G10': {
-          return this.raiseBrush()
-        }
-        case 'G11': {
-          return this.lowerBrush()
-        }
+      case 'G0': {
+        const { x, y } = args
+        this.speed = movingSpeed
+        return this.moveTo(x, y)
+      }
+      case 'G1': {
+        const { x, y } = args
+        this.speed = drawingSpeed
+        return this.moveTo(x, y)
+      }
+      case 'G10': {
+        return this.raiseBrush()
+      }
+      case 'G11': {
+        return this.lowerBrush()
+      }
       }
     } else {
       return null
@@ -132,18 +132,18 @@ export default class EBBController {
         if (command) {
           const { type, duration, state, deltaStepsX, deltaStepsY, isDrawing } = command
           switch (type) {
-            case 'SM':
-              stepsX += Math.abs(deltaStepsX)
-              stepsY += Math.abs(deltaStepsY)
-              if (isDrawing) {
-                const distance = Math.sqrt(Math.pow(deltaStepsX / 80, 2) + Math.pow(deltaStepsY / 80, 2))
-                totalDistance += distance
-              }
-              printPoint(`${type} - [${deltaStepsX}, ${deltaStepsY}]`)
-              break
-            case 'SP':
-              printPoint(`${type} - [${state}]`)
-              break
+          case 'SM':
+            stepsX += Math.abs(deltaStepsX)
+            stepsY += Math.abs(deltaStepsY)
+            if (isDrawing) {
+              const distance = Math.sqrt(Math.pow(deltaStepsX / 80, 2) + Math.pow(deltaStepsY / 80, 2))
+              totalDistance += distance
+            }
+            printPoint(`${type} - [${deltaStepsX}, ${deltaStepsY}]`)
+            break
+          case 'SP':
+            printPoint(`${type} - [${state}]`)
+            break
           }
 
           if (duration) {

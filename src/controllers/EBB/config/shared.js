@@ -50,8 +50,18 @@ const cart_custom = {
   maxStepsY: 105 * MILLIMETER_IN_STEPS
 }
 
+const custom_tibor_A3 = {
+  maxStepsX: 420 * MILLIMETER_IN_STEPS,
+  maxStepsY: 287 * MILLIMETER_IN_STEPS
+}
+
+const shine = {
+  maxStepsX: 150 * MILLIMETER_IN_STEPS,
+  maxStepsY: 210 * MILLIMETER_IN_STEPS
+}
+
 export const controllerConfig = {
-  ...A4_VERTICAL,
+  ...custom_tibor_A3,
   minStepsPerMillisecond: 0.07,
   maxStepsPerMillisecond: 15,
   servoRate: 40000,
