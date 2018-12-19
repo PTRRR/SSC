@@ -50,6 +50,10 @@ export class SSCEngine {
         websocketServer.onConnection(send => {
           console.log('Client connection')
           send('feedback', 'SSC: Successfully connected!')
+
+          this.controller.onFinish(() => {
+            send('finished-printing')
+          })
         })
 
         websocketServer.onMessage((type, data, send) => {

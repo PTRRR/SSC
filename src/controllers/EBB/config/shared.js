@@ -55,6 +55,16 @@ const custom = {
   maxStepsY: 320 * 0.5 * MILLIMETER_IN_STEPS
 }
 
+const cart_post = {
+  maxStepsX: 105 * MILLIMETER_IN_STEPS,
+  maxStepsY: 150 * MILLIMETER_IN_STEPS
+}
+
+const cart_custom = {
+  maxStepsX: 420 * MILLIMETER_IN_STEPS,
+  maxStepsY: 105 * MILLIMETER_IN_STEPS
+}
+
 export const controllerConfig = {
   ...GrandeCarte,
   minStepsPerMillisecond: 0.07,
@@ -62,7 +72,7 @@ export const controllerConfig = {
   servoRate: 40000,
   minServoHeight: 20000,
   maxServoHeight: 16000,
-  drawingSpeed: 30,
+  drawingSpeed: 40,
   movingSpeed: 70,
   minDeltaPositionForDistinctLines: 2
 }
