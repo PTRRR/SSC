@@ -18,18 +18,14 @@ export class SerialConnection {
         })
 
         if (port) {
-          this.port = new SerialPort(port.comName)
+          const { comName } = port
+          this.port = new SerialPort(comName)
           resolve(this.port)
-        } else {
-          console.log(this.config)
-          console.log(availablePorts)
-          reject(
-            `ERROR: No serial port were found that correspond to the config file.\n
-            Please edit the config file: ./controllers/[controllerName]/config/[os]`
-          )
         }
       } else {
-        reject('ERROR: No serial ports were found')
+        reject({
+          error: 'ERROR: No serial serial ports were found on this computer'
+        })
       }
     })
   }
