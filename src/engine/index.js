@@ -2,45 +2,33 @@ import { SerialConnection } from './serialConnection'
 import { WebSocketServer } from './server'
 import * as controllers from '../controllers'
 
-export class SSCEngine {
+export class SSC {
   constructor (config = {}) {
-    const { platform, controller, server } = config
+    const { controller, server, serial } = config
 
-    // Server config
+    this.controllerConfig = controller
     this.serverConfig = server
+    this.serialConnection = new SerialConnection(serial)
 
-    // Controller config
-    if (controller && platform) {
-      this.controllerConfig = controllers[controller.name].config[platform]
-    } else {
-      // TODO: Improve error messages
-      console.error('config not good')
-    }
-
-    // Create a serial connection instance
-    const { serialConfig } = this.controllerConfig
-    this.serialConnection = new SerialConnection(serialConfig)
-
-    // Declare a controller variable that will handle communitation
-    // to the hardware
+    // Declare a controller variable that will handle communication
+    // with the hardware.
     this.controller = new controllers[controller.name].controller()
   }
 
   async start () {
     return new Promise(async (resolve, reject) => {
-      await this.serialConnection.initializeConnection().catch(e => {
-        reject(e)
-      })
+      await this.serialConnection.initializeConnection()
+        .catch(error => reject({ error }))
 
       // Handle opening
       this.serialConnection.on('open', async () => {
         console.log('SERIAL CONNECTION: established')
 
         // Initialize the controller
-        const { controllerConfig } = this.controllerConfig
+        const { config } = this.controllerConfig
         await this.controller.initializeController(
           this.serialConnection,
-          controllerConfig
+					config
         )
         console.log('CONTROLLER INITIALIZED')
 
@@ -69,9 +57,11 @@ export class SSCEngine {
       })
 
       // Handle errors
-      this.serialConnection.on('error', e => {
-        console.error(e)
-        reject(e)
+      this.serialConnection.on('error', error => {
+        reject({
+          type: 'serial',
+          error
+        })
       })
     })
   }

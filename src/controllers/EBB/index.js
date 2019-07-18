@@ -1,7 +1,6 @@
-import * as config from './config'
-import controller from './controller'
-
+import EBBController from './controller'
+import prompt from './prompt'
 export const EBB = {
-  config,
-  controller
+    controller: EBBController,
+    prompt
 }

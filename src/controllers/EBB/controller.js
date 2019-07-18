@@ -1,6 +1,7 @@
 import * as helpers from './helpers'
 import { printPoint, clamp } from '../../utils'
 const gcodeToObject = require('gcode-json-converter').gcodeToObject
+const MILLIMETER_IN_STEPS = 80
 
 export default class EBBController {
   constructor () {
@@ -236,16 +237,14 @@ export default class EBBController {
   async moveTo (targetX, targetY) {
     const [x, y] = this.position
     const {
-      maxStepsX,
-      maxStepsY,
+      maxWidth,
+      maxHeight,
       minStepsPerMillisecond,
       maxStepsPerMillisecond
     } = this.config
 
-    targetX = clamp(targetX, 0, maxStepsX)
-    targetY = clamp(targetY, 0, maxStepsY)
-    //targetX = clamp(targetX, 0, maxStepsX)
-    //targetY = clamp(targetY, 0, maxStepsY)
+    targetX = clamp(targetX, 0, maxWidth * MILLIMETER_IN_STEPS)
+    targetY = clamp(targetY, 0, maxHeight * MILLIMETER_IN_STEPS)
 
     const { amountX, amountY } = helpers.getAmountSteps(x, y, targetX, targetY)
     const duration = helpers.getDuration(
@@ -275,8 +274,8 @@ export default class EBBController {
   async lowLevelMoveTo (targetX, targetY) {
     const [x, y] = this.position
     const {
-      maxStepsX,
-      maxStepsY,
+      maxWidth,
+      maxHeight,
       minStepsPerMillisecond,
       maxStepsPerMillisecond
     } = this.config
@@ -285,8 +284,8 @@ export default class EBBController {
     const STEP_IN_SECONDS = 0.00004
     const ONE_STEP = 2147483648
 
-    targetX = clamp(targetX, 0, maxStepsX)
-    targetY = clamp(targetY, 0, maxStepsY)
+    targetX = clamp(targetX, 0, maxWidth * MILLIMETER_IN_STEPS)
+    targetY = clamp(targetY, 0, maxHeight * MILLIMETER_IN_STEPS)
 
     const { amountX, amountY } = helpers.getAmountSteps(x, y, targetX, targetY)
     const duration = helpers.getDuration(
