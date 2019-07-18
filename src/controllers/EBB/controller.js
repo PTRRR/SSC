@@ -243,15 +243,8 @@ export default class EBBController {
       maxStepsPerMillisecond
     } = this.config
 
-<<<<<<< HEAD
-    targetX = clamp(targetX, 0, maxStepsX)
-    targetY = clamp(targetY, 0, maxStepsY)
-    //targetX = clamp(targetX, 0, maxStepsX)
-    //targetY = clamp(targetY, 0, maxStepsY)
-=======
     targetX = clamp(targetX, 0, maxWidth * MILLIMETER_IN_STEPS)
     targetY = clamp(targetY, 0, maxHeight * MILLIMETER_IN_STEPS)
->>>>>>> Implement controller config
 
     const { amountX, amountY } = helpers.getAmountSteps(x, y, targetX, targetY)
     const duration = helpers.getDuration(
