@@ -27,11 +27,20 @@ export class CLI {
 
       if (!existingConfig) {
         const name = await this.selectController()
+
+        let controllerConfig = {}
+        if (controllers[name].prompt) {
+          controllerConfig = await controllers[name].prompt()
+        }
+
         const serverPort = await this.selectServerPort()
         const comName = await this.selectSerialPort()
 
         const config = {
-          controller: { name },
+          controller: {
+            name,
+            config: controllerConfig
+          },
           server: { serverPort },
           serial: { comName }
         }

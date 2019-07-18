@@ -1,2 +1,6 @@
 import EBBController from './controller'
-export const EBB = EBBController
+import prompt from './prompt'
+export const EBB = {
+    controller: EBBController,
+    prompt
+}

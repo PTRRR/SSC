@@ -4,19 +4,15 @@ import * as controllers from '../controllers'
 
 export class SSC {
   constructor (config = {}) {
-    const {
-      controller,
-      server: serverConfig,
-      serial: serialConfig
-    } = config
+    const { controller, server, serial } = config
 
-    this.serialConfig = serialConfig
-    this.serverConfig = serverConfig
-    this.serialConnection = new SerialConnection(serialConfig)
+    this.controllerConfig = controller
+    this.serverConfig = server
+    this.serialConnection = new SerialConnection(serial)
 
     // Declare a controller variable that will handle communication
     // with the hardware.
-    this.controller = new controllers[controller.name]()
+    this.controller = new controllers[controller.name].controller()
   }
 
   async start () {
@@ -29,10 +25,10 @@ export class SSC {
         console.log('SERIAL CONNECTION: established')
 
         // Initialize the controller
-        const { controllerConfig } = this.controllerConfig
+        const { config } = this.controllerConfig
         await this.controller.initializeController(
           this.serialConnection,
-          controllerConfig
+					config
         )
         console.log('CONTROLLER INITIALIZED')
 
