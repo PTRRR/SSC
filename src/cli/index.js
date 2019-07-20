@@ -1,10 +1,11 @@
 import fs from 'fs'
-import path from 'path'
 import qoa from 'qoa'
 import chalk from 'chalk'
 import figlet from 'figlet'
 import SerialPort from 'serialport'
 import * as controllers from '../controllers'
+
+const selector = '>'
 
 export class CLI {
   constructor () {
@@ -41,7 +42,9 @@ export class CLI {
             name,
             config: controllerConfig
           },
-          server: { serverPort },
+          server: { 
+            port: serverPort
+          },
           serial: { comName }
         }
 
@@ -95,9 +98,9 @@ export class CLI {
 
       const interactive = {
         type: 'interactive',
-        query: 'Do you want to choose an existing config?',
+        query: '\nDo you want to choose an existing config?\n',
         handle: 'bool',
-        symbol: '--------------------------->',
+        symbol: selector,
         menu: [ true, false ]
       }
 
@@ -105,9 +108,9 @@ export class CLI {
       if (bool) {
         const interactive = {
           type: 'interactive',
-          query: 'Select one config:',
+          query: '\nSelect one config:\n',
           handle: 'configName',
-          symbol: '--------------------------->',
+          symbol: selector,
           menu: configs
         }
 
@@ -125,9 +128,9 @@ export class CLI {
       const menu = Object.keys(controllers)
       const questions = {
         type: 'interactive',
-        query: 'Choose a controller:',
+        query: '\nChoose a controller:\n',
         handle: 'name',
-        symbol: '--------------------------->',
+        symbol: selector,
         menu
       }
 
@@ -140,7 +143,7 @@ export class CLI {
     return new Promise(async resolve => {
       const input = {
         type: 'input',
-        query: 'Enter a server port (Ex: 1234):',
+        query: '\nEnter a server port [1234]:',
         handle: 'port'
       }
 
@@ -155,9 +158,9 @@ export class CLI {
 
       const questions = {
         type: 'interactive',
-        query: 'Choose a serial port:',
+        query: '\nChoose a serial port:\n',
         handle: 'comName',
-        symbol: '--------------------------->',
+        symbol: selector,
         menu: list.map((it, index) => it.comName)
       }
 
@@ -170,7 +173,7 @@ export class CLI {
     return new Promise(async resolve => {
       const input = {
         type: 'input',
-        query: 'Enter a config name:',
+        query: '\nEnter a config name:',
         handle: 'name'
       }
 
@@ -183,9 +186,9 @@ export class CLI {
     return new Promise(async resolve => {
       const questions = {
         type: 'interactive',
-        query: 'Save the config?',
+        query: '\nSave the config?\n',
         handle: 'bool',
-        symbol: '--------------------------->',
+        symbol: selector,
         menu: [ true, false ]
       }
   

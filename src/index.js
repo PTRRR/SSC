@@ -5,6 +5,8 @@ async function runServer () {
   const cli = new CLI()
   const config = await cli.runConfigSequence()
 
+  console.log('\n')
+  console.log('-------- Starting SSC ----------')
   try {
     const ssc = new SSC(config)
     await ssc.start()
@@ -29,6 +31,7 @@ async function runServer () {
 
     console.log('\n')
     console.log('-------- Closing SSC ----------')
+    process.exit(1)
   }
 }
 

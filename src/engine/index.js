@@ -22,19 +22,28 @@ export class SSC {
 
       // Handle opening
       this.serialConnection.on('open', async () => {
-        console.log('SERIAL CONNECTION: established')
+        console.log('\nSERIAL CONNECTION: established')
 
         // Initialize the controller
         const { config } = this.controllerConfig
         await this.controller.initializeController(
           this.serialConnection,
-					config
-        )
-        console.log('CONTROLLER INITIALIZED')
+          config
+        ).then(() => {
+          console.log('CONTROLLER INITIALIZED')
+        }).catch(error => {
+          reject({ error })
+        })
 
         // Initialize the webSocket server
         const websocketServer = new WebSocketServer(this.serverConfig)
         await websocketServer.initializeServer()
+          .then(() => {
+            console.log(`SERVER INITIALIZED`)
+          }).catch(error => {
+            reject({ error })
+          })
+
         websocketServer.onConnection(send => {
           console.log('Client connection')
           send('feedback', 'SSC: Successfully connected!')
@@ -51,7 +60,6 @@ export class SSC {
             send(type, 'Can not be treated')
           }
         })
-        console.log('SERVER INITIALIZED')
 
         resolve()
       })

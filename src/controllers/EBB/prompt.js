@@ -17,7 +17,7 @@ export default async function () {
   return new Promise (async resolve => {
     const minServoHeight = {
       type: 'input',
-      query: `Input min servo height [${defaultConfig.minServoHeight}]:`,
+      query: `\nInput min servo height [${defaultConfig.minServoHeight}]:`,
       handle: 'minServoHeight'
     }
   
