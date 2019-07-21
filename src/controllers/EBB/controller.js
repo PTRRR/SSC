@@ -22,12 +22,14 @@ export default class EBBController {
   async initializeController (port, config) {
     return new Promise(async (resolve, reject) => {
       // Set a timeout delay
-      setTimeout(() => {
+      const errorTimeout = setTimeout(() => {
         reject('ERROR: Can\'t connect to the EggBotBoard.')
       }, 3000)
+
       this.initializeSerialConnection(port)
       await this.configureController(config)
-      resolve()
+      clearTiemout(errorTimeout)
+			resolve()
     })
   }
 
