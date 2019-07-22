@@ -1,10 +1,12 @@
+import BaseController from '../BaseController'
 import * as helpers from './helpers'
 import { printPoint, clamp } from '../../utils'
 const gcodeToObject = require('gcode-json-converter').gcodeToObject
 const MILLIMETER_IN_STEPS = 80
 
-export default class EBBController {
+export default class EBBController extends BaseController {
   constructor () {
+  	super()
     this.port = null
     this.config = null
 

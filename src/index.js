@@ -1,12 +1,22 @@
+import { argv } from 'yargs'
 import { CLI } from './cli'
 import { SSC } from './engine'
 
-async function runServer () {
+async function initializeServer () {
   const cli = new CLI()
   const config = await cli.runConfigSequence()
+  await runSSC(config)  
+}
 
+async function initializeDevServer (configPath) {
+  const config = await import(`./${configPath}`)
+  await runSSC(config)
+}
+
+async function runSSC (config) {
   console.log('\n')
   console.log('-------- Starting SSC ----------')
+  
   try {
     const ssc = new SSC(config)
     await ssc.start()
@@ -35,4 +45,10 @@ async function runServer () {
   }
 }
 
-runServer()
+const { dev } = argv
+
+if (dev) {
+  initializeDevServer(dev)
+} else {
+  initializeServer()
+}

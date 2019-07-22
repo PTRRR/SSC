@@ -13,7 +13,7 @@ fs.readdirSync('node_modules')
 module.exports = {
   mode: 'development',
   entry: {
-    server: ['babel-polyfill', './src/index.js']
+    server: ['./src/index.js']
   },
   module: {
     rules: [
@@ -23,7 +23,18 @@ module.exports = {
         use: {
           loader: 'babel-loader',
           options: {
-            presets: ['env', 'stage-0']
+            presets: [
+              [
+                "@babel/preset-env",
+                {
+                  "modules": "commonjs",
+                  "targets": {
+                    "node": "current"
+                  }
+                }
+              ]
+            ],
+            plugins: ['@babel/plugin-syntax-dynamic-import']
           }
         }
       }
