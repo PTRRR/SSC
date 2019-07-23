@@ -42,6 +42,7 @@
     "webpack-cli": "^3.3.6"
   },
   "dependencies": {
+    "@serialport/parser-readline": "^2.0.2",
     "chalk": "^2.4.2",
     "chmod": "^0.2.1",
     "express": "^4.17.1",

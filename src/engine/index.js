@@ -4,15 +4,11 @@ import * as controllers from '../controllers'
 
 export class SSC {
   constructor (config = {}) {
-    const { controller, server, serial } = config
+    const { serial, server, controller } = config
 
     this.controllerConfig = controller
     this.serverConfig = server
     this.serialConnection = new SerialConnection(serial)
-
-    // Declare a controller variable that will handle communication
-    // with the hardware.
-    this.controller = new controllers[controller.name].controller()
   }
 
   async start () {
@@ -25,15 +21,13 @@ export class SSC {
         console.log('\nSERIAL CONNECTION: established')
 
         // Initialize the controller
-        const { config } = this.controllerConfig
-        await this.controller.initializeController(
-          this.serialConnection,
-          config
-        ).then(() => {
-          console.log('CONTROLLER INITIALIZED')
-        }).catch(error => {
-          reject({ error })
-        })
+        const { name, config } = this.controllerConfig
+        const controller = new controllers[name].controller(
+        	this.serialConnection.port,
+        	config
+        )
+        
+        controller.initialize()
 
         // Initialize the webSocket server
         const websocketServer = new WebSocketServer(this.serverConfig)
@@ -48,14 +42,15 @@ export class SSC {
           console.log('Client connection')
           send('feedback', 'SSC: Successfully connected!')
 
-          this.controller.onFinish(() => {
+          controller.onFinish(() => {
             send('finished-printing')
           })
         })
 
         websocketServer.onMessage((type, data, send) => {
-          if (this.controller[type]) {
-            send(type, this.controller[type](data))
+          const controllerMethod = controller[type]
+          if (controllerMethod) {
+            send(type, controllerMethod(data))
           } else {
             send(type, 'Can not be treated')
           }

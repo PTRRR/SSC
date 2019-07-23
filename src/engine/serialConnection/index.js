@@ -1,4 +1,5 @@
 import SerialPort from 'serialport'
+import ReadLine from '@serialport/parser-readline'
 import { compareTo } from '../../utils'
 
 export class SerialConnection {
