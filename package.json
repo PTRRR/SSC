@@ -45,7 +45,7 @@
     "@serialport/parser-readline": "^2.0.2",
     "chalk": "^2.4.2",
     "chmod": "^0.2.1",
-    "express": "^4.17.1",
+    "express": "^4.17.3",
     "figlet": "^1.2.3",
     "gcode-interpreter": "^2.1.0",
     "gcode-json-converter": "^1.2.1",
